@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { AlertTitle, Fade, IconButton } from '@mui/material';
-import MuiAlert, { AlertColor } from '@mui/material/Alert';
+import {
+  AlertTitle,
+  Fade,
+  IconButton,
+  AlertColor,
+  Alert as MuiAlert,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 type AlertMessage = {
@@ -28,8 +33,8 @@ export default function useAlert() {
     setAlert((prev) => ({ ...prev, show: false }));
   }, [setAlert]);
 
-  const Alert = useMemo(() => {
-    return (
+  const Alert = useMemo(
+    () => (
       <Fade in={alert.show}>
         <MuiAlert
           severity={alert.severity}
@@ -48,8 +53,9 @@ export default function useAlert() {
           {alert.message}
         </MuiAlert>
       </Fade>
-    );
-  }, [alert, hideAlert]);
+    ),
+    [alert, hideAlert]
+  );
 
   return { Alert, showAlert, hideAlert };
 }

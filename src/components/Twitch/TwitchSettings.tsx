@@ -7,8 +7,6 @@ import {
   Button,
   Stack,
   TextField,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
@@ -175,17 +173,21 @@ export default function TwitchSettings({
   open,
   onClose,
 }: TwitchSettingsProps) {
-  const [settings, setSettings] = useTabs('server');
+  const { Tabs, activeTab } = useTabs('server', [
+    {
+      label: 'Server',
+      value: 'server',
+    },
+    {
+      label: 'Twitch',
+      value: 'twitch',
+    },
+  ]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>
-        <Tabs value={settings} onChange={setSettings}>
-          <Tab label="Server" value="server" />
-          <Tab label="Twitch" value="twitch" />
-        </Tabs>
-      </DialogTitle>
-      <SettingsTab twitch={twitch} onClose={onClose} settings={settings} />
+      <DialogTitle>{Tabs}</DialogTitle>
+      <SettingsTab twitch={twitch} onClose={onClose} settings={activeTab} />
     </Dialog>
   );
 }

@@ -1,7 +1,11 @@
 import { TwitchClip } from '@/api';
-import { CardActions, Tab, Tabs } from '@mui/material';
+import { CardActions } from '@mui/material';
 
 import { Handle, Position, NodeProps } from 'reactflow';
+
+import VideoIcon from '@mui/icons-material/PlayCircle';
+import ImageIcon from '@mui/icons-material/Image';
+import TextIcon from '@mui/icons-material/TextFields';
 
 import { TwitchClipCard, TwitchClipDisplayMode } from '@/components/Twitch';
 import { useTabs } from '@/hooks';
@@ -11,41 +15,37 @@ type VideoNodeProps = {
   isConnectable: boolean;
 } & NodeProps;
 
-const TwitchClipDisplayModeIcons = {
-  [TwitchClipDisplayMode.Video]: await import('@mui/icons-material/PlayCircle'),
-  [TwitchClipDisplayMode.Image]: await import('@mui/icons-material/Image'),
-  [TwitchClipDisplayMode.Text]: await import('@mui/icons-material/TextFields'),
-};
-
 export default function VideoNode({
   data,
   isConnectable,
   dragging,
 }: VideoNodeProps) {
-  const [displayMode, setDisplayMode] = useTabs<TwitchClipDisplayMode>(
-    TwitchClipDisplayMode.Video
+  const { Tabs, activeTab } = useTabs<TwitchClipDisplayMode>(
+    TwitchClipDisplayMode.Video,
+    [
+      {
+        label: 'Video',
+        value: TwitchClipDisplayMode.Video,
+        icon: <VideoIcon />,
+      },
+      {
+        label: 'Image',
+        value: TwitchClipDisplayMode.Image,
+        icon: <ImageIcon />,
+      },
+      {
+        label: 'Text',
+        value: TwitchClipDisplayMode.Text,
+        icon: <TextIcon />,
+      },
+    ]
   );
 
   return (
     <TwitchClipCard
       clip={data}
-      header={
-        <CardActions>
-          <Tabs
-            value={displayMode}
-            onChange={setDisplayMode}
-            TabIndicatorProps={{
-              sx: { display: 'none' },
-            }}
-          >
-            {Object.values(TwitchClipDisplayMode).map((mode) => {
-              const Icon = TwitchClipDisplayModeIcons[mode].default;
-              return <Tab key={mode} value={mode} icon={<Icon />} />;
-            })}
-          </Tabs>
-        </CardActions>
-      }
-      displayMode={displayMode}
+      header={<CardActions>{Tabs}</CardActions>}
+      displayMode={activeTab}
       cardProps={{
         sx: {
           opacity: dragging ? 0.5 : 1,

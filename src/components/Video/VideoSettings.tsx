@@ -10,8 +10,6 @@ import {
   Stack,
   TextField,
   Autocomplete,
-  Tab,
-  Tabs,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -66,21 +64,25 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
     },
   });
 
-  const [settings, setSettings] = useTabs('resolution');
+  const { Tabs, activeTab } = useTabs('resolution', [
+    {
+      label: 'Resolution',
+      value: 'resolution',
+    },
+    {
+      label: 'Transition',
+      value: 'transition',
+    },
+  ]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
       <form method="dialog" onSubmit={formik.handleSubmit}>
-        <DialogTitle>
-          <Tabs value={settings} onChange={setSettings}>
-            <Tab label="Resolution" value="resolution" />
-            <Tab label="Transition" value="transition" />
-          </Tabs>
-        </DialogTitle>
+        <DialogTitle>{Tabs}</DialogTitle>
 
         <DialogContent>
           <Stack gap={2}>
-            {settings === 'resolution' && (
+            {activeTab === 'resolution' && (
               <>
                 <InputLabel>Please select video resolution</InputLabel>
                 <Breadcrumbs separator="x">
@@ -126,7 +128,7 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
               </>
             )}
 
-            {settings === 'transition' && (
+            {activeTab === 'transition' && (
               <>
                 <InputLabel>Default Transition</InputLabel>
                 <Autocomplete
