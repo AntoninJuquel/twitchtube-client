@@ -40,9 +40,20 @@ function TwitchImageDisplay({ clip }: TwitchClipDisplayProps) {
     <CardMedia
       src={clip.thumbnail_url}
       image={clip.thumbnail_url}
-      sx={{ height: 252, width: 448 }}
+      sx={{
+        height: 252,
+        width: 448,
+        boxShadow: 'inset 0px 0px 200px rgba(0,0,0,0.9)',
+      }}
       title={clip.title}
-    />
+    >
+      <CardHeader
+        title={clip.title}
+        titleTypographyProps={{ color: 'white' }}
+        subheader={clip.broadcaster_name}
+        subheaderTypographyProps={{ color: 'white' }}
+      />
+    </CardMedia>
   );
 }
 
