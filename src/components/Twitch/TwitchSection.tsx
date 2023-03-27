@@ -39,11 +39,7 @@ export default function TwitchSection({
   const [expanded, setExpanded] = useState<boolean>(false);
   const [clips, setClips] = useState<TwitchClip[]>([]);
   return (
-    <div
-      style={{
-        margin: '10px',
-      }}
-    >
+    <Stack spacing={1} margin={1}>
       <Stack direction="row" spacing={1} alignItems="center">
         <Button onClick={() => removeSection(id)}>
           <DeleteIcon />
@@ -68,23 +64,25 @@ export default function TwitchSection({
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={0.5}>
-            {clips.map((clip) => (
-              <Grid key={clip.id} item>
+            {clips.map((clip, index) => (
+              <Grid key={clip?.id ?? index} item>
                 <TwitchClipCard
                   clip={clip}
                   footer={
-                    <CardActions>
-                      <Checkbox
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            actions.set(clip.id, clip);
-                          } else {
-                            actions.remove(clip.id);
-                          }
-                        }}
-                        checked={Boolean(selectedClips.get(clip.id))}
-                      />
-                    </CardActions>
+                    clip && (
+                      <CardActions>
+                        <Checkbox
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              actions.set(clip.id, clip);
+                            } else {
+                              actions.remove(clip.id);
+                            }
+                          }}
+                          checked={Boolean(selectedClips.get(clip.id))}
+                        />
+                      </CardActions>
+                    )
                   }
                 />
               </Grid>
@@ -92,6 +90,6 @@ export default function TwitchSection({
           </Grid>
         </AccordionDetails>
       </Accordion>
-    </div>
+    </Stack>
   );
 }

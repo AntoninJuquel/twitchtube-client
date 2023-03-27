@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardMedia } from '@mui/material';
+import { Card, CardHeader, CardMedia, Skeleton } from '@mui/material';
 import type { TwitchClip } from '@/api';
 
 export enum TwitchClipDisplayMode {
@@ -8,7 +8,7 @@ export enum TwitchClipDisplayMode {
 }
 
 type TwitchClipProps = {
-  clip: TwitchClip;
+  clip?: TwitchClip;
   header?: React.ReactNode;
   footer?: React.ReactNode;
   children?: React.ReactNode;
@@ -82,7 +82,17 @@ export default function TwitchClipCard({
     // eslint-disable-next-line react/jsx-props-no-spreading
     <Card variant="outlined" {...cardProps}>
       {header}
-      {TwitchClipDisplay[displayMode ?? TwitchClipDisplayMode.Video]({ clip })}
+      {clip ? (
+        TwitchClipDisplay[displayMode ?? TwitchClipDisplayMode.Video]({ clip })
+      ) : (
+        <Skeleton
+          variant="rectangular"
+          height={252}
+          width={448}
+          animation="wave"
+        />
+      )}
+
       {children}
       {footer}
     </Card>
@@ -90,6 +100,7 @@ export default function TwitchClipCard({
 }
 
 TwitchClipCard.defaultProps = {
+  clip: undefined,
   displayMode: TwitchClipDisplayMode.Video,
   header: null,
   footer: null,
