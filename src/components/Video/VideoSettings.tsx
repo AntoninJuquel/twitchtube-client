@@ -1,3 +1,4 @@
+import GLTransitions from 'gl-transitions';
 import {
   Breadcrumbs,
   Button,
@@ -15,8 +16,7 @@ import {
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
-import GLTransitions from 'gl-transitions';
-import { useState } from 'react';
+import useTabs from '@/hooks/useTabs';
 
 type VideoSettingsProps = {
   open: boolean;
@@ -56,22 +56,23 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
     validationSchema,
     onReset: onClose,
     onSubmit: async (values) => {
-      console.log(values);
+      const { width, height, fps, transitionName, transitionDuration } = values;
+      localStorage.setItem('width', width.toString());
+      localStorage.setItem('height', height.toString());
+      localStorage.setItem('fps', fps.toString());
+      localStorage.setItem('transitionName', transitionName);
+      localStorage.setItem('transitionDuration', transitionDuration.toString());
       onClose();
     },
   });
 
-  const [tab, setTab] = useState('resolution');
-
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-    setTab(newValue);
-  };
+  const [settings, setSettings] = useTabs('resolution');
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
       <form method="dialog" onSubmit={formik.handleSubmit}>
         <DialogTitle>
-          <Tabs value={tab} onChange={handleChange}>
+          <Tabs value={settings} onChange={setSettings}>
             <Tab label="Resolution" value="resolution" />
             <Tab label="Transition" value="transition" />
           </Tabs>
@@ -79,7 +80,7 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
 
         <DialogContent>
           <Stack gap={2}>
-            {tab === 'resolution' && (
+            {settings === 'resolution' && (
               <>
                 <InputLabel>Please select video resolution</InputLabel>
                 <Breadcrumbs separator="x">
@@ -125,7 +126,7 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
               </>
             )}
 
-            {tab === 'transition' && (
+            {settings === 'transition' && (
               <>
                 <InputLabel>Default Transition</InputLabel>
                 <Autocomplete

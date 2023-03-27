@@ -4,7 +4,7 @@ import { CardActions, Tab, Tabs } from '@mui/material';
 import { Handle, Position, NodeProps } from 'reactflow';
 
 import { TwitchClipCard, TwitchClipDisplayMode } from '@/components/Twitch';
-import { useState } from 'react';
+import useTabs from '@/hooks/useTabs';
 
 type VideoNodeProps = {
   data: TwitchClip;
@@ -22,16 +22,9 @@ export default function VideoNode({
   isConnectable,
   dragging,
 }: VideoNodeProps) {
-  const [displayMode, setDisplayMode] = useState<TwitchClipDisplayMode>(
+  const [displayMode, setDisplayMode] = useTabs<TwitchClipDisplayMode>(
     TwitchClipDisplayMode.Video
   );
-
-  const handleChange = (
-    event: React.SyntheticEvent,
-    newValue: TwitchClipDisplayMode
-  ) => {
-    setDisplayMode(newValue);
-  };
 
   return (
     <TwitchClipCard
@@ -40,7 +33,7 @@ export default function VideoNode({
         <CardActions>
           <Tabs
             value={displayMode}
-            onChange={handleChange}
+            onChange={setDisplayMode}
             TabIndicatorProps={{
               sx: { display: 'none' },
             }}
