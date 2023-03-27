@@ -13,8 +13,8 @@ import {
 import * as yup from 'yup';
 import { useFormik } from 'formik';
 import { Twitch } from '@/api';
-import useTabs from '@/hooks/useTabs';
-import HiddenField from '../common/HiddenField';
+import { useTabs } from '@/hooks';
+import HiddenField from '@/components/common/HiddenField';
 
 type TwitchSettingsProps = {
   twitch: Twitch;

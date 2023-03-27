@@ -4,7 +4,7 @@ import { CardActions, Tab, Tabs } from '@mui/material';
 import { Handle, Position, NodeProps } from 'reactflow';
 
 import { TwitchClipCard, TwitchClipDisplayMode } from '@/components/Twitch';
-import useTabs from '@/hooks/useTabs';
+import { useTabs } from '@/hooks';
 
 type VideoNodeProps = {
   data: TwitchClip;

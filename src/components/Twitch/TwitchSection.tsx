@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import {
-  Button,
+  IconButton,
   Stack,
   Accordion,
   AccordionSummary,
@@ -12,7 +12,7 @@ import {
   Checkbox,
 } from '@mui/material';
 
-import DeleteIcon from '@mui/icons-material/DeleteForever';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { Actions } from 'usehooks-ts';
@@ -41,14 +41,14 @@ export default function TwitchSection({
   return (
     <Stack spacing={1} margin={1}>
       <Stack direction="row" spacing={1} alignItems="center">
-        <Button onClick={() => removeSection(id)}>
+        <IconButton onClick={() => removeSection(id)} color="primary">
           <DeleteIcon />
-        </Button>
+        </IconButton>
         <TwitchForm
           twitch={twitch}
           onGetClips={(newClips) => {
             setClips(newClips);
-            setExpanded(true);
+            setExpanded(newClips.length > 0);
           }}
         />
       </Stack>
@@ -70,7 +70,11 @@ export default function TwitchSection({
                   clip={clip}
                   footer={
                     clip && (
-                      <CardActions>
+                      <CardActions
+                        sx={{
+                          justifyContent: 'center',
+                        }}
+                      >
                         <Checkbox
                           onChange={(e) => {
                             if (e.target.checked) {

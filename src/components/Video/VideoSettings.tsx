@@ -16,7 +16,7 @@ import {
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
-import useTabs from '@/hooks/useTabs';
+import { useTabs } from '@/hooks';
 
 type VideoSettingsProps = {
   open: boolean;

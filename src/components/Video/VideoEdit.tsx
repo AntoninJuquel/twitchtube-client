@@ -8,9 +8,10 @@ import { ReactFlowProvider } from 'reactflow';
 import { useToggle } from 'usehooks-ts';
 import { TwitchClip } from '@/api';
 
+import { SettingsButton } from '@/components/common';
+
 import VideoFlow from './VideoFlow';
 import VideoSettings from './VideoSettings';
-import { SettingsButton } from '../common';
 
 type VideoEditProps = {
   trigger: React.ReactElement;
