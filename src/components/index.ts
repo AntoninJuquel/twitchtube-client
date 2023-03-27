@@ -1,3 +1,3 @@
-import TwitchClip from './TwitchClip';
-
-export { TwitchClip };
+export * from './Twitch';
+export * from './Video';
+export * from './common';
