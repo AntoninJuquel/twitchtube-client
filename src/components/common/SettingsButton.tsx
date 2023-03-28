@@ -1,6 +1,5 @@
-import { Fab } from '@mui/material';
 import { useToggle } from 'usehooks-ts';
-import SettingsIcon from '@mui/icons-material/Settings';
+import CustomFab from './CustomFab';
 
 type SettingsProps = {
   SettingsComponent: React.JSXElementConstructor<{
@@ -13,20 +12,12 @@ export default function SettingsButton({ SettingsComponent }: SettingsProps) {
   const [open, toggle] = useToggle(false);
   return (
     <>
-      <Fab
-        color="primary"
-        size="small"
-        aria-label="scroll back to top"
-        sx={{
-          position: 'fixed',
-          top: 32,
-          right: 32,
-          zIndex: 1,
-        }}
+      <CustomFab
+        position="top-right"
         onClick={toggle}
-      >
-        <SettingsIcon />
-      </Fab>
+        icon="settings"
+        size="small"
+      />
       <SettingsComponent open={open} onClose={toggle} />
     </>
   );

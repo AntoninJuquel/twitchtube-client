@@ -1,9 +1,6 @@
-import { useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
 
-import { Button, Fab, Zoom, Collapse, Box } from '@mui/material';
-import Add from '@mui/icons-material/Add';
-import useScrollTrigger from '@mui/material/useScrollTrigger';
+import { Button, Collapse, Box } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 import { TransitionGroup } from 'react-transition-group';
@@ -11,6 +8,8 @@ import { TransitionGroup } from 'react-transition-group';
 import { useMap } from 'usehooks-ts';
 
 import {
+  CustomFab,
+  ScrollToTop,
   SettingsButton,
   TwitchSection,
   TwitchSettings,
@@ -28,15 +27,6 @@ function Home() {
     new Map([[uuid(), '']])
   );
   const [selectedClips, actions] = useMap<string, TwitchClip>(new Map());
-
-  const trigger = useScrollTrigger({
-    target: window,
-    disableHysteresis: true,
-    threshold: 100,
-  });
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   const addSection = () => {
     sectionsActions.set(uuid(), '');
@@ -62,35 +52,9 @@ function Home() {
         ))}
       </TransitionGroup>
 
-      <Fab
-        onClick={addSection}
-        color="primary"
-        sx={{
-          position: 'fixed',
-          bottom: 32,
-          left: 32,
-          zIndex: 1,
-        }}
-      >
-        <Add />
-      </Fab>
+      <CustomFab position="bottom-left" onClick={addSection} />
 
-      <Zoom in={trigger}>
-        <Fab
-          onClick={scrollToTop}
-          color="primary"
-          size="small"
-          aria-label="scroll back to top"
-          sx={{
-            position: 'fixed',
-            bottom: 32,
-            right: 32,
-            zIndex: 1,
-          }}
-        >
-          <KeyboardArrowUpIcon />
-        </Fab>
-      </Zoom>
+      <ScrollToTop />
 
       <SettingsButton
         SettingsComponent={({ open, onClose }) =>

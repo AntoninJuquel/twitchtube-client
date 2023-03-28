@@ -12,16 +12,12 @@ import ReactFlow, {
   Connection,
   Edge,
   SelectionMode,
-  useViewport,
-  OnConnectStartParams,
   getOutgoers,
+  getIncomers,
   Node,
 } from 'reactflow';
 
-import { Fab } from '@mui/material';
-
-import CheckIcon from '@mui/icons-material/Check';
-
+import { Fab, Icon, Zoom } from '@mui/material';
 import { TwitchClip } from '@/api';
 
 import VideoPanel from './VideoPanel';
@@ -40,28 +36,57 @@ const defaultEdge = {
 
 function getOrder(node: Node, nodes: Node[], edges: Edge[]): Node[] {
   const outgoers = getOutgoers(node, nodes, edges);
-  return outgoers.reduce((acc, outgoer) => {
-    return acc.concat(getOrder(outgoer, nodes, edges));
+  return outgoers.reduce((res, outgoer) => {
+    return res.concat(getOrder(outgoer, nodes, edges));
   }, outgoers);
+}
+
+function isLinearGraph(nodes: Node[], edges: Edge[]): boolean {
+  const startNodes = nodes.filter(
+    (node) => getIncomers(node, nodes, edges).length === 0
+  ).length;
+  const endNodes = nodes.filter(
+    (node) => getOutgoers(node, nodes, edges).length === 0
+  ).length;
+
+  if (startNodes !== 1 || endNodes !== 1) {
+    return false;
+  }
+
+  // Vérifier que chaque nœud a exactement un prédécesseur et un successeur (sauf le départ et l'arrivée)
+  // const uniquePredsAndSuccessor = nodes.every((node) => {
+  //   return (
+  //     getIncomers(node, nodes, edges).length === 1 &&
+  //     getOutgoers(node, nodes, edges).length === 1
+  //   );
+  // });
+  // if (!uniquePredsAndSuccessor) {
+  //   return false;
+  // }
+
+  // Vérifier qu'il n'y a pas de cycles ou d'intersections
+  const visite = new Set<Node>();
+  const dfs = (node: Node) => {
+    visite.add(node);
+    const outgoers = getOutgoers(node, nodes, edges);
+    outgoers.some((outgoer) => {
+      if (visite.has(outgoer)) {
+        return true;
+      }
+      return dfs(outgoer);
+    });
+    visite.delete(node);
+    return true;
+  };
+
+  return dfs(nodes[0]);
 }
 
 export default function VideoFlow({ selectedClips }: VideoFlowProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const { x, y, zoom } = useViewport();
 
-  const connectingNodeId = useRef<string>('');
   const didConnect = useRef(false);
-
-  const onConnectStart = useCallback(
-    (
-      event: React.MouseEvent<Element, MouseEvent> | React.TouchEvent<Element>,
-      params: OnConnectStartParams
-    ) => {
-      connectingNodeId.current = params.nodeId as string;
-    },
-    []
-  );
 
   const onConnect = useCallback(
     (params: Edge | Connection) => {
@@ -69,30 +94,6 @@ export default function VideoFlow({ selectedClips }: VideoFlowProps) {
       setEdges((es) => addEdge({ ...params, ...defaultEdge }, es));
     },
     [setEdges]
-  );
-
-  const onConnectEnd = useCallback(
-    (e: MouseEvent | TouchEvent) => {
-      if (!didConnect.current) {
-        const mouse = e as MouseEvent;
-        const newNode = {
-          id: 'new',
-          position: { x: (mouse.x - x) / zoom, y: (mouse.y - y) / zoom },
-          data: { label: 'new node' },
-        };
-        const newEdge = {
-          id: 'new',
-          source: connectingNodeId.current,
-          target: newNode.id,
-          ...defaultEdge,
-        };
-
-        setNodes((prev) => prev.concat(newNode));
-        setEdges((prev) => prev.concat(newEdge));
-      }
-      didConnect.current = false;
-    },
-    [x, y, zoom, setNodes, setEdges]
   );
 
   useEffect(() => {
@@ -129,6 +130,24 @@ export default function VideoFlow({ selectedClips }: VideoFlowProps) {
     [setEdges]
   );
 
+  const allConnected = nodes.every((n) =>
+    edges.some((e) => e.source === n.id || e.target === n.id)
+  );
+
+  if (nodes.length > 0) console.log(isLinearGraph(nodes, edges));
+
+  const upload = useCallback(async () => {
+    const node = nodes.find((n) => !edges.some((e) => e.target === n.id));
+
+    if (!node) return;
+
+    const order = [node, ...getOrder(node, nodes, edges)];
+
+    axios.post('http://217.160.192.110:80/video', {
+      clips: order.map((n) => n.data),
+    });
+  }, [nodes, edges]);
+
   return (
     <ReactFlow
       minZoom={0.1}
@@ -136,9 +155,8 @@ export default function VideoFlow({ selectedClips }: VideoFlowProps) {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onConnectStart={onConnectStart}
       onConnect={onConnect}
-      onConnectEnd={onConnectEnd}
+      // onConnectEnd={onConnectEnd}
       nodeTypes={nodeTypes}
       fitView
       onEdgeClick={onEdgeClick}
@@ -147,28 +165,15 @@ export default function VideoFlow({ selectedClips }: VideoFlowProps) {
       <VideoPanel />
       <Controls />
       <MiniMap />
-      <Fab
-        onClick={() => {
-          const node = nodes.find((n) => !edges.some((e) => e.target === n.id));
-
-          if (!node) return;
-
-          const order = [node, ...getOrder(node, nodes, edges)];
-
-          axios.post('http://217.160.192.110:80/video', {
-            clips: order.map((n) => n.data),
-          });
-        }}
-        color="primary"
-        sx={{
-          position: 'fixed',
-          bottom: 32,
-          right: '50%',
-          zIndex: 1000,
-        }}
-      >
-        <CheckIcon />
-      </Fab>
+      <Zoom in={allConnected}>
+        <Fab
+          onClick={upload}
+          sx={{ bottom: 32, left: '50%', position: 'fixed' }}
+          color="primary"
+        >
+          <Icon>check</Icon>
+        </Fab>
+      </Zoom>
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
     </ReactFlow>
   );
