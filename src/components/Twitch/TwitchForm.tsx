@@ -12,13 +12,14 @@ import {
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import dayjs from 'dayjs';
 
+import axios from 'axios';
 import { Twitch, TwitchClip } from '@/api/Twitch';
 import { useAlert } from '@/hooks';
 
 const validationSchema = yup.object({
   type: yup.string().required('Type is required'),
   name: yup.string().required('Name is required'),
-  max: yup.number().min(1).max(100).required('Max is required'),
+  first: yup.number().min(1).max(100).required('Max is required'),
   start: yup.date().required('Start is required'),
   end: yup.date().required('End is required'),
 });
@@ -31,7 +32,7 @@ type FormProps = {
 export type TwitchFormParams = {
   type: string;
   name: string;
-  max: number;
+  first: number;
   start: string;
   end: string;
 };
@@ -40,9 +41,9 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
   const { Alert, hideAlert, showAlert } = useAlert();
   const formik = useFormik({
     initialValues: {
-      type: 'games',
+      type: 'game',
       name: '',
-      max: 10,
+      first: 10,
       start: dayjs().subtract(1, 'day').toISOString(),
       end: dayjs().toISOString(),
     },
@@ -50,71 +51,79 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
     onSubmit: async (values) => {
       hideAlert();
       onGetClips(Array(10).fill(undefined));
-      switch (values.type) {
-        case 'games': {
-          const game = await twitch.getGameByName(values.name);
-          if (!game) {
-            showAlert({
-              message: `Game ${values.name} not found`,
-              severity: 'error',
-            });
-            onGetClips([]);
-            return;
-          }
-          const clips = await twitch.getClips({
-            game_id: game.id,
-            started_at: values.start,
-            ended_at: values.end,
-            first: values.max,
-          });
-          if (clips.data.length === 0) {
-            showAlert({
-              message: `No clips found for ${values.name}`,
-              severity: 'error',
-            });
-          } else {
-            showAlert({
-              message: `Found ${clips.data.length} clips for ${values.name}`,
-              severity: 'success',
-            });
-          }
-          onGetClips(clips.data);
-          break;
-        }
-        case 'broadcaster': {
-          const broadcaster = await twitch.getUserByName(values.name);
-          if (!broadcaster) {
-            showAlert({
-              message: `Broadcaster ${values.name} not found`,
-              severity: 'error',
-            });
-            onGetClips([]);
-            return;
-          }
-          const clips = await twitch.getClips({
-            broadcaster_id: broadcaster.id,
-            started_at: values.start,
-            ended_at: values.end,
-            first: values.max,
-          });
-          if (clips.data.length === 0) {
-            showAlert({
-              message: `No clips found for ${values.name}`,
-              severity: 'error',
-            });
-          } else {
-            showAlert({
-              message: `Found ${clips.data.length} clips for ${values.name}`,
-              severity: 'success',
-            });
-          }
-          onGetClips(clips.data);
-          break;
-        }
-
-        default:
-          break;
+      try {
+        const response = await axios.get('http://localhost:3000/twitch/clips', {
+          params: values,
+        });
+        onGetClips(response.data.data);
+      } catch (error) {
+        console.log(error);
       }
+      // switch (values.type) {
+      //   case 'game': {
+      //     const game = await twitch.getGameByName(values.name);
+      //     if (!game) {
+      //       showAlert({
+      //         message: `Game ${values.name} not found`,
+      //         severity: 'error',
+      //       });
+      //       onGetClips([]);
+      //       return;
+      //     }
+      //     const clips = await twitch.getClips({
+      //       game_id: game.id,
+      //       started_at: values.start,
+      //       ended_at: values.end,
+      //       first: values.first,
+      //     });
+      //     if (clips.data.length === 0) {
+      //       showAlert({
+      //         message: `No clips found for ${values.name}`,
+      //         severity: 'error',
+      //       });
+      //     } else {
+      //       showAlert({
+      //         message: `Found ${clips.data.length} clips for ${values.name}`,
+      //         severity: 'success',
+      //       });
+      //     }
+      //     onGetClips(clips.data);
+      //     break;
+      //   }
+      //   case 'broadcaster': {
+      //     const broadcaster = await twitch.getUserByName(values.name);
+      //     if (!broadcaster) {
+      //       showAlert({
+      //         message: `Broadcaster ${values.name} not found`,
+      //         severity: 'error',
+      //       });
+      //       onGetClips([]);
+      //       return;
+      //     }
+      //     const clips = await twitch.getClips({
+      //       broadcaster_id: broadcaster.id,
+      //       started_at: values.start,
+      //       ended_at: values.end,
+      //       first: values.first,
+      //     });
+      //     if (clips.data.length === 0) {
+      //       showAlert({
+      //         message: `No clips found for ${values.name}`,
+      //         severity: 'error',
+      //       });
+      //     } else {
+      //       showAlert({
+      //         message: `Found ${clips.data.length} clips for ${values.name}`,
+      //         severity: 'success',
+      //       });
+      //     }
+      //     onGetClips(clips.data);
+      //     break;
+      //   }
+
+      //   default:
+      //     break;
+      // }
     },
   });
 
@@ -129,9 +138,9 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
           }}
         >
           <Button
-            variant={formik.values.type === 'games' ? 'contained' : 'outlined'}
+            variant={formik.values.type === 'game' ? 'contained' : 'outlined'}
             onClick={() => {
-              formik.setFieldValue('type', 'games');
+              formik.setFieldValue('type', 'game');
             }}
           >
             <Icon>sports_esports</Icon>
@@ -150,7 +159,7 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
         <TextField
           id="name"
           name="name"
-          label={formik.values.type === 'games' ? 'Game' : 'Broadcaster'}
+          label={formik.values.type === 'game' ? 'Game' : 'Broadcaster'}
           value={formik.values.name}
           onChange={formik.handleChange}
           error={formik.touched.name && Boolean(formik.errors.name)}
@@ -158,16 +167,16 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
           size="small"
         />
         <TextField
-          id="max"
+          id="first"
           label="Max"
           type="number"
           InputProps={{
-            inputProps: { min: 1, max: 100 },
+            inputProps: { min: 1, first: 100 },
           }}
-          value={formik.values.max}
+          value={formik.values.first}
           onChange={formik.handleChange}
-          error={formik.touched.max && Boolean(formik.errors.max)}
-          helperText={formik.touched.max && formik.errors.max}
+          error={formik.touched.first && Boolean(formik.errors.first)}
+          helperText={formik.touched.first && formik.errors.first}
           size="small"
         />
         <Breadcrumbs separator="-">

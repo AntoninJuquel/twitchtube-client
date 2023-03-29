@@ -3937,6 +3937,13 @@ tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
+twitch-api-helix@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/twitch-api-helix/-/twitch-api-helix-0.0.3.tgz#cb0874f9791e55d5f656e7fa9ed5303e30b0ca2b"
+  integrity sha512-FdQubRRREKhlGPu3NCdw2vZ4Yd0LYEbIsRaXQpAj8TJT5oMrzhU+X8aAiqwf10ndFyAjr+BoKCHhfH3N0kYchA==
+  dependencies:
+    axios "^1.3.4"
+
 type-check@^0.4.0, type-check@~0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/type-check/-/type-check-0.4.0.tgz#07b8203bfa7056c0657050e3ccd2c37730bab8f1"
