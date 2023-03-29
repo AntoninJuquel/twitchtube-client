@@ -1,10 +1,10 @@
 import { useCallback, useState, useMemo } from 'react';
-import { Tab, Tabs as MuiTabs } from '@mui/material';
+import { Tab, Tabs as MuiTabs, Icon } from '@mui/material';
 
 type TabItem<T> = {
   value: T;
   label: string;
-  icon?: React.ReactElement;
+  icon?: string;
 };
 
 export default function useTabs<T>(defaultTab: T, tabs: TabItem<T>[]) {
@@ -29,8 +29,8 @@ export default function useTabs<T>(defaultTab: T, tabs: TabItem<T>[]) {
           <Tab
             key={tab.label}
             value={tab.value}
-            label={tab.label}
-            icon={tab.icon}
+            label={tab.icon ? '' : tab.label}
+            icon={tab.icon && <Icon>{tab.icon}</Icon>}
           />
         ))}
       </MuiTabs>

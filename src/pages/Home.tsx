@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { Button, Collapse, Box } from '@mui/material';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { Button, Collapse, Box, Icon } from '@mui/material';
 
 import { TransitionGroup } from 'react-transition-group';
 
@@ -76,7 +75,7 @@ function Home() {
               zIndex: 1,
             }}
           >
-            <KeyboardArrowUpIcon />
+            <Icon>keyboard_arrow_up</Icon>
           </Button>
         }
         selectedClips={selectedClips}

@@ -1,9 +1,6 @@
 import { cloneElement, forwardRef } from 'react';
-import { Button, Dialog, Slide } from '@mui/material';
+import { Button, Dialog, Icon, Slide } from '@mui/material';
 import { TransitionProps } from '@mui/material/transitions';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-
-import { ReactFlowProvider } from 'reactflow';
 
 import { useToggle } from 'usehooks-ts';
 import { TwitchClip } from '@/api';
@@ -53,11 +50,10 @@ export default function VideoEdit({ trigger, selectedClips }: VideoEditProps) {
           }}
           onClick={toggleOpen}
         >
-          <KeyboardArrowDownIcon />
+          <Icon>keyboard_arrow_down</Icon>
         </Button>
-        <ReactFlowProvider>
-          <VideoFlow selectedClips={selectedClips} />
-        </ReactFlowProvider>
+
+        <VideoFlow selectedClips={selectedClips} />
 
         <SettingsButton SettingsComponent={VideoSettings} />
       </Dialog>

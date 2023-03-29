@@ -8,10 +8,8 @@ import {
   Slide,
   Fade,
   Stack,
+  Icon,
 } from '@mui/material';
-
-import HelpIcon from '@mui/icons-material/Help';
-import CloseIcon from '@mui/icons-material/Close';
 
 import { Panel } from 'reactflow';
 import { useToggle } from 'usehooks-ts';
@@ -29,7 +27,7 @@ export default function VideoPanel() {
             position: 'absolute',
           }}
         >
-          <HelpIcon />
+          <Icon>help</Icon>
         </IconButton>
       </Fade>
       <Slide in={showPanel} unmountOnExit>
@@ -43,7 +41,7 @@ export default function VideoPanel() {
               aria-label="show more"
               color="primary"
             >
-              <CloseIcon />
+              <Icon>close</Icon>
             </IconButton>
           </CardActions>
           <CardContent>

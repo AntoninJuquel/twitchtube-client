@@ -1,11 +1,7 @@
 import { TwitchClip } from '@/api';
-import { CardActions } from '@mui/material';
+import { Button, CardActions, Icon } from '@mui/material';
 
 import { Handle, Position, NodeProps } from 'reactflow';
-
-import VideoIcon from '@mui/icons-material/PlayCircle';
-import ImageIcon from '@mui/icons-material/Image';
-import TextIcon from '@mui/icons-material/TextFields';
 
 import { TwitchClipCard, TwitchClipDisplayMode } from '@/components/Twitch';
 import { useTabs } from '@/hooks';
@@ -15,28 +11,32 @@ type VideoNodeProps = {
   isConnectable: boolean;
 } & NodeProps;
 
+function VideoNodeHeader({ Tabs }: { Tabs: React.ReactNode }) {
+  return <CardActions>{Tabs}</CardActions>;
+}
+
 export default function VideoNode({
   data,
   isConnectable,
   dragging,
 }: VideoNodeProps) {
   const { Tabs, activeTab } = useTabs<TwitchClipDisplayMode>(
-    TwitchClipDisplayMode.Video,
+    TwitchClipDisplayMode.Image,
     [
       {
         label: 'Video',
         value: TwitchClipDisplayMode.Video,
-        icon: <VideoIcon />,
+        icon: 'play_circle',
       },
       {
         label: 'Image',
         value: TwitchClipDisplayMode.Image,
-        icon: <ImageIcon />,
+        icon: 'image',
       },
       {
         label: 'Text',
         value: TwitchClipDisplayMode.Text,
-        icon: <TextIcon />,
+        icon: 'text_fields',
       },
     ]
   );
@@ -44,7 +44,7 @@ export default function VideoNode({
   return (
     <TwitchClipCard
       clip={data}
-      header={<CardActions>{Tabs}</CardActions>}
+      header={<VideoNodeHeader Tabs={Tabs} />}
       displayMode={activeTab}
       cardProps={{
         sx: {
@@ -53,6 +53,11 @@ export default function VideoNode({
         },
       }}
     >
+      <CardActions>
+        <Button variant="contained" size="small" fullWidth title="Add layer">
+          <Icon>add</Icon>
+        </Button>
+      </CardActions>
       <Handle
         type="target"
         position={Position.Left}

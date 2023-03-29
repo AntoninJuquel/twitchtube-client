@@ -6,10 +6,8 @@ import {
   ButtonGroup,
   Stack,
   Breadcrumbs,
+  Icon,
 } from '@mui/material';
-
-import GamesIcon from '@mui/icons-material/SportsEsports';
-import BroadcasterIcon from '@mui/icons-material/Person';
 
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import dayjs from 'dayjs';
@@ -136,7 +134,7 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
               formik.setFieldValue('type', 'games');
             }}
           >
-            <GamesIcon />
+            <Icon>sports_esports</Icon>
           </Button>
           <Button
             variant={
@@ -146,7 +144,7 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
               formik.setFieldValue('type', 'broadcaster');
             }}
           >
-            <BroadcasterIcon />
+            <Icon>person</Icon>
           </Button>
         </ButtonGroup>
         <TextField

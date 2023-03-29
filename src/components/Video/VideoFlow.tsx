@@ -1,23 +1,21 @@
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { useCallback, useEffect, useRef } from 'react';
 
 import ReactFlow, {
   MiniMap,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
   BackgroundVariant,
-  Connection,
   Edge,
   SelectionMode,
   getOutgoers,
   getIncomers,
   Node,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 
-import { Fab, Icon, Zoom } from '@mui/material';
+import { Fab, Icon, Zoom, colors } from '@mui/material';
 import { TwitchClip } from '@/api';
 
 import VideoPanel from './VideoPanel';
@@ -32,142 +30,106 @@ const nodeTypes = { videoNode: VideoNode };
 const defaultEdge = {
   type: 'smoothstep',
   animated: true,
+  style: {
+    stroke: colors.lightBlue[900],
+    strokeWidth: 2,
+  },
 };
 
-function getOrder(node: Node, nodes: Node[], edges: Edge[]): Node[] {
-  const outgoers = getOutgoers(node, nodes, edges);
-  return outgoers.reduce((res, outgoer) => {
-    return res.concat(getOrder(outgoer, nodes, edges));
-  }, outgoers);
-}
-
-function isLinearGraph(nodes: Node[], edges: Edge[]): boolean {
+function isLinearGraph(nodes: Node[], edges: Edge[]): Node[] | null {
   const startNodes = nodes.filter(
     (node) => getIncomers(node, nodes, edges).length === 0
-  ).length;
+  );
   const endNodes = nodes.filter(
     (node) => getOutgoers(node, nodes, edges).length === 0
-  ).length;
+  );
 
-  if (startNodes !== 1 || endNodes !== 1) {
-    return false;
+  if (startNodes.length !== 1 || endNodes.length !== 1) {
+    return null;
   }
 
-  // Vérifier que chaque nœud a exactement un prédécesseur et un successeur (sauf le départ et l'arrivée)
-  // const uniquePredsAndSuccessor = nodes.every((node) => {
-  //   return (
-  //     getIncomers(node, nodes, edges).length === 1 &&
-  //     getOutgoers(node, nodes, edges).length === 1
-  //   );
-  // });
-  // if (!uniquePredsAndSuccessor) {
-  //   return false;
-  // }
+  const [startNode] = startNodes;
+  const [endNode] = endNodes;
 
-  // Vérifier qu'il n'y a pas de cycles ou d'intersections
-  const visite = new Set<Node>();
-  const dfs = (node: Node) => {
-    visite.add(node);
+  const uniquePredsAndSuccessors = nodes.every((node) => {
+    const incomers = getIncomers(node, nodes, edges);
     const outgoers = getOutgoers(node, nodes, edges);
-    outgoers.some((outgoer) => {
-      if (visite.has(outgoer)) {
-        return true;
-      }
-      return dfs(outgoer);
-    });
-    visite.delete(node);
-    return true;
-  };
+    return (
+      incomers.length === (node === startNode ? 0 : 1) &&
+      outgoers.length === (node === endNode ? 0 : 1)
+    );
+  });
 
-  return dfs(nodes[0]);
+  if (!uniquePredsAndSuccessors) {
+    return null;
+  }
+
+  const linearNodes = [startNode];
+  let currentNode = startNode;
+
+  while (currentNode !== endNode) {
+    const [nextNode] = getOutgoers(currentNode, nodes, edges);
+    linearNodes.push(nextNode);
+    currentNode = nextNode;
+  }
+
+  return linearNodes;
 }
 
-export default function VideoFlow({ selectedClips }: VideoFlowProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+function upload(clips: TwitchClip[]) {
+  console.log(clips.map((clip) => clip.title));
+  // axios.post('http://217.160.192.110:80/video', {
+  //   clips,
+  // });
+}
 
-  const didConnect = useRef(false);
-
-  const onConnect = useCallback(
-    (params: Edge | Connection) => {
-      didConnect.current = true;
-      setEdges((es) => addEdge({ ...params, ...defaultEdge }, es));
-    },
-    [setEdges]
-  );
+function Flow({ selectedClips }: VideoFlowProps) {
+  const reactFlowInstance = useReactFlow();
 
   useEffect(() => {
-    setNodes((prev) =>
-      Array.from(selectedClips.values()).map((clip, index) => ({
-        id: clip.id,
-        position: prev[index]?.position || { x: 0, y: index * 100 },
-        data: clip,
-        type: 'videoNode',
-        deletable: false,
-      }))
-    );
-  }, [setNodes, selectedClips]);
+    const nodes = Array.from(selectedClips.values()).map((clip) => ({
+      id: clip.id,
+      type: 'videoNode',
+      data: clip,
+      position: { x: Math.random() * 10, y: Math.random() * 10 },
+    }));
+    reactFlowInstance.setNodes(nodes);
+  }, [selectedClips, reactFlowInstance]);
 
-  const onEdgeClick = useCallback(
-    (e: React.MouseEvent, edge: Edge) => {
-      if (!edge) return;
+  const [linearGraph, setLinearGraph] = useState<Node[] | null>();
 
-      if (e.altKey) {
-        setEdges((es) => es.filter((el) => el.id !== edge.id));
-      } else {
-        setEdges((es) =>
-          es.map((el) =>
-            el.id === edge.id
-              ? {
-                  ...el,
-                  type: el.type === 'smoothstep' ? 'default' : 'smoothstep',
-                }
-              : el
-          )
-        );
-      }
-    },
-    [setEdges]
-  );
+  const checkLinearGraph = useCallback(() => {
+    const nodes = reactFlowInstance.getNodes();
+    const edges = reactFlowInstance.getEdges();
+    setLinearGraph(isLinearGraph(nodes, edges));
+  }, [reactFlowInstance]);
 
-  const allConnected = nodes.every((n) =>
-    edges.some((e) => e.source === n.id || e.target === n.id)
-  );
-
-  if (nodes.length > 0) console.log(isLinearGraph(nodes, edges));
-
-  const upload = useCallback(async () => {
-    const node = nodes.find((n) => !edges.some((e) => e.target === n.id));
-
-    if (!node) return;
-
-    const order = [node, ...getOrder(node, nodes, edges)];
-
-    axios.post('http://217.160.192.110:80/video', {
-      clips: order.map((n) => n.data),
-    });
-  }, [nodes, edges]);
+  const uploadResult = useCallback(() => {
+    if (linearGraph) {
+      upload(linearGraph.map((node) => node.data as TwitchClip));
+    }
+  }, [linearGraph]);
 
   return (
     <ReactFlow
-      minZoom={0.1}
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      // onConnectEnd={onConnectEnd}
-      nodeTypes={nodeTypes}
       fitView
-      onEdgeClick={onEdgeClick}
+      minZoom={0.1}
+      nodeTypes={nodeTypes}
       selectionMode={SelectionMode.Partial}
+      defaultEdgeOptions={defaultEdge}
+      defaultNodes={[]}
+      defaultEdges={[]}
+      onEdgesChange={checkLinearGraph}
+      onConnect={checkLinearGraph}
+      connectOnClick={false}
+      connectionRadius={100}
     >
       <VideoPanel />
       <Controls />
       <MiniMap />
-      <Zoom in={allConnected}>
+      <Zoom in={!!linearGraph}>
         <Fab
-          onClick={upload}
+          onClick={uploadResult}
           sx={{ bottom: 32, left: '50%', position: 'fixed' }}
           color="primary"
         >
@@ -176,5 +138,13 @@ export default function VideoFlow({ selectedClips }: VideoFlowProps) {
       </Zoom>
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
     </ReactFlow>
+  );
+}
+
+export default function VideoFLow({ selectedClips }: VideoFlowProps) {
+  return (
+    <ReactFlowProvider>
+      <Flow selectedClips={selectedClips} />
+    </ReactFlowProvider>
   );
 }

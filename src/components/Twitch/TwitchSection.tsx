@@ -10,10 +10,8 @@ import {
   Grid,
   CardActions,
   Checkbox,
+  Icon,
 } from '@mui/material';
-
-import DeleteIcon from '@mui/icons-material/Delete';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { Actions } from 'usehooks-ts';
 
@@ -42,7 +40,7 @@ export default function TwitchSection({
     <Stack spacing={1} margin={1}>
       <Stack direction="row" spacing={1} alignItems="center">
         <IconButton onClick={() => removeSection(id)} color="primary">
-          <DeleteIcon />
+          <Icon>delete</Icon>
         </IconButton>
         <TwitchForm
           twitch={twitch}
@@ -57,7 +55,7 @@ export default function TwitchSection({
         <AccordionSummary
           aria-controls="panel1d-content"
           id="panel1d-header"
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<Icon>expand_more</Icon>}
           style={{ backgroundColor: '#f5f5f5' }}
         >
           <Typography>Clips {clips.length}</Typography>

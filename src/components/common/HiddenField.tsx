@@ -6,9 +6,8 @@ import {
   InputLabel,
   FormControl,
   OutlinedInputProps,
+  Icon,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function HiddenField({
   id,
@@ -32,7 +31,7 @@ export default function HiddenField({
               onMouseDown={(e) => e.preventDefault()}
               edge="end"
             >
-              {show ? <VisibilityOff /> : <Visibility />}
+              <Icon>{show ? 'visibility' : 'visibility_off'}</Icon>
             </IconButton>
           </InputAdornment>
         }

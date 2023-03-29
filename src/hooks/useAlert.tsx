@@ -5,8 +5,8 @@ import {
   IconButton,
   AlertColor,
   Alert as MuiAlert,
+  Icon,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 
 type AlertMessage = {
   title?: string;
@@ -45,7 +45,7 @@ export default function useAlert() {
               size="small"
               onClick={hideAlert}
             >
-              <CloseIcon fontSize="inherit" />
+              <Icon>close</Icon>
             </IconButton>
           }
         >
