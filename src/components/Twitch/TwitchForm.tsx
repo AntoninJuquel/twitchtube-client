@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
-import dayjs from 'dayjs';
 import { TwitchClip, TwitchClipResponseBody } from 'twitch-api-helix';
+import { sub } from 'date-fns';
 
 import { useAlert } from '@/hooks';
 import * as api from '@/api';
@@ -43,8 +43,8 @@ export default function TwitchForm({ onGetClips }: FormProps) {
       type: 'game',
       name: '',
       first: 10,
-      start: dayjs().subtract(1, 'day').toISOString(),
-      end: dayjs().toISOString(),
+      start: sub(new Date(), { days: 1 }),
+      end: new Date(),
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -128,17 +128,15 @@ export default function TwitchForm({ onGetClips }: FormProps) {
         <Breadcrumbs separator="-">
           <MobileDateTimePicker
             label="Start"
-            value={dayjs(formik.values.start)}
-            onAccept={(e) =>
-              formik.handleChange('start')(e?.toISOString() ?? '')
-            }
+            value={formik.values.start}
+            onAccept={(e) => formik.setFieldValue('start', e, true)}
             slotProps={{ textField: { size: 'small' } }}
           />
 
           <MobileDateTimePicker
             label="End"
-            value={dayjs(formik.values.end)}
-            onAccept={(e) => formik.handleChange('end')(e?.toISOString() ?? '')}
+            value={formik.values.end}
+            onAccept={(e) => formik.setFieldValue('end', e, true)}
             slotProps={{ textField: { size: 'small' } }}
           />
         </Breadcrumbs>

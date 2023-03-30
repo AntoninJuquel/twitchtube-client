@@ -17,7 +17,7 @@ type SnackbarAlert = {
   };
 };
 
-type AlertMessage = {
+export type AlertMessage = {
   title?: string;
   show?: boolean;
   message: string;
@@ -74,13 +74,10 @@ export default function useAlert() {
         autoHideDuration={alert.snackbar?.autoHideDuration}
         anchorOrigin={alert.snackbar?.anchorOrigin}
       >
-        <MuiAlert severity={alert.severity}>
-          {alert.title && <AlertTitle>{alert.title}</AlertTitle>}
-          {alert.message}
-        </MuiAlert>
+        {Alert}
       </Snackbar>
     ),
-    [alert]
+    [alert, Alert]
   );
 
   return { Alert, SnackbarAlert, showAlert, hideAlert };

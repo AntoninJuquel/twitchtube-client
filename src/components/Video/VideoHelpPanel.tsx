@@ -14,7 +14,7 @@ import {
 import { Panel } from 'reactflow';
 import { useToggle } from 'usehooks-ts';
 
-export default function VideoPanel() {
+export default function VideoHelpPanel() {
   const [showPanel, togglePanel] = useToggle(false);
 
   return (

@@ -13,6 +13,8 @@ import {
   VideoEdit,
 } from '@/components';
 
+import * as api from '@/api';
+
 function Home() {
   const [sections, sectionsActions] = useMap<string, string>(
     new Map([[uuid(), '']])
@@ -67,6 +69,10 @@ function Home() {
         }
         selectedClips={selectedClips}
       />
+
+      <button onClick={() => api.getVideoDownload()} type="button">
+        Download Image
+      </button>
     </Box>
   );
 }

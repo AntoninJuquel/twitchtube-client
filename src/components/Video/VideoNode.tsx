@@ -1,25 +1,30 @@
-import { TwitchClip } from '@/api';
-import { Button, CardActions, Icon } from '@mui/material';
+import { TwitchClip } from 'twitch-api-helix';
+import { Button, CardActions, Icon, colors } from '@mui/material';
 
 import { Handle, Position, NodeProps } from 'reactflow';
 
 import { TwitchClipCard, TwitchClipDisplayMode } from '@/components/Twitch';
 import { useTabs } from '@/hooks';
 
-type VideoNodeProps = {
-  data: TwitchClip;
-  isConnectable: boolean;
-} & NodeProps;
+type NodeData = TwitchClip & {
+  videoPosition: 'start' | 'end' | 'middle';
+};
 
 function VideoNodeHeader({ Tabs }: { Tabs: React.ReactNode }) {
   return <CardActions>{Tabs}</CardActions>;
 }
 
+const border = {
+  start: `5px solid ${colors.lightGreen[500]}`,
+  end: `5px solid ${colors.lightGreen[500]}`,
+  middle: undefined,
+};
+
 export default function VideoNode({
   data,
   isConnectable,
   dragging,
-}: VideoNodeProps) {
+}: NodeProps<NodeData>) {
   const { Tabs, activeTab } = useTabs<TwitchClipDisplayMode>(
     TwitchClipDisplayMode.Image,
     [
@@ -50,6 +55,7 @@ export default function VideoNode({
         sx: {
           opacity: dragging ? 0.5 : 1,
           transition: 'opacity 0.2s',
+          border: border[data.videoPosition],
         },
       }}
     >

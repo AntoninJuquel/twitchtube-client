@@ -12,15 +12,17 @@ import ReactFlow, {
   Node,
   useReactFlow,
   ReactFlowProvider,
+  ControlButton,
 } from 'reactflow';
 
-import { Fab, Icon, Zoom, colors } from '@mui/material';
+import { Icon, colors } from '@mui/material';
 import { TwitchClip } from 'twitch-api-helix';
 
 import * as api from '@/api';
 
-import VideoPanel from './VideoPanel';
+import VideoHelpPanel from './VideoHelpPanel';
 import VideoNode from './VideoNode';
+import VideoInfoPanel from './VideoInfoPanel';
 
 type VideoFlowProps = {
   selectedClips: Omit<Map<string, TwitchClip>, 'clear' | 'set' | 'delete'>;
@@ -96,29 +98,77 @@ async function upload(clips: TwitchClip[]) {
 function Flow({ selectedClips }: VideoFlowProps) {
   const reactFlowInstance = useReactFlow();
 
-  useEffect(() => {
-    const nodes = Array.from(selectedClips.values()).map((clip) => ({
-      id: clip.id,
-      type: 'videoNode',
-      data: clip,
-      position: { x: Math.random() * 10, y: Math.random() * 10 },
-    }));
-    reactFlowInstance.setNodes(nodes);
-  }, [selectedClips, reactFlowInstance]);
-
   const [linearGraph, setLinearGraph] = useState<Node[] | null>();
-
   const checkLinearGraph = useCallback(() => {
     const nodes = reactFlowInstance.getNodes();
     const edges = reactFlowInstance.getEdges();
-    setLinearGraph(isLinearGraph(nodes, edges));
+    const linearNodes = isLinearGraph(nodes, edges);
+    const updatedNodes = nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        videoPosition: 'middle',
+      },
+    }));
+    if (linearNodes) {
+      updatedNodes[0].data.videoPosition = 'start';
+      updatedNodes[nodes.length - 1].data.videoPosition = 'end';
+    }
+    reactFlowInstance.setNodes(updatedNodes);
+    setLinearGraph(linearNodes);
   }, [reactFlowInstance]);
+
+  useEffect(() => {
+    const currentNodes = reactFlowInstance.getNodes();
+    const nodes = Array.from(selectedClips.values()).map((clip, index) => ({
+      id: clip.id,
+      type: 'videoNode',
+      data: clip,
+      position: {
+        x:
+          currentNodes[index]?.position?.x ||
+          Math.random() * 50 * selectedClips.size,
+        y:
+          currentNodes[index]?.position?.y ||
+          Math.random() * 50 * selectedClips.size,
+      },
+    }));
+    reactFlowInstance.setNodes(nodes);
+    checkLinearGraph();
+  }, [selectedClips, checkLinearGraph, reactFlowInstance]);
 
   const uploadResult = useCallback(() => {
     if (linearGraph) {
       upload(linearGraph.map((node) => node.data as TwitchClip));
     }
   }, [linearGraph]);
+
+  const autoConnect = useCallback(() => {
+    const nodes = reactFlowInstance.getNodes();
+
+    // eslint-disable-next-line no-plusplus
+    for (let i = nodes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [nodes[i], nodes[j]] = [nodes[j], nodes[i]];
+    }
+
+    const edges = nodes.map((node, index) => {
+      nodes[index].position = {
+        x: index * 300,
+        y: index % 2 === 0 ? 0 : 400,
+      };
+
+      return {
+        id: `${node.id}-${nodes[index + 1]?.id}`,
+        source: node.id,
+        target: nodes[index + 1]?.id,
+      };
+    });
+
+    reactFlowInstance.setNodes(nodes);
+    reactFlowInstance.setEdges(edges);
+    checkLinearGraph();
+  }, [reactFlowInstance, checkLinearGraph]);
 
   return (
     <ReactFlow
@@ -134,18 +184,18 @@ function Flow({ selectedClips }: VideoFlowProps) {
       connectOnClick={false}
       connectionRadius={100}
     >
-      <VideoPanel />
-      <Controls />
+      <VideoHelpPanel />
+      <VideoInfoPanel
+        selectedClips={selectedClips}
+        upload={uploadResult}
+        linearGraph={Boolean(linearGraph)}
+      />
+      <Controls>
+        <ControlButton onClick={autoConnect} title="auto connect">
+          <Icon fontSize="small">route</Icon>
+        </ControlButton>
+      </Controls>
       <MiniMap />
-      <Zoom in={!!linearGraph}>
-        <Fab
-          onClick={uploadResult}
-          sx={{ bottom: 32, left: '50%', position: 'fixed' }}
-          color="primary"
-        >
-          <Icon>check</Icon>
-        </Fab>
-      </Zoom>
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
     </ReactFlow>
   );

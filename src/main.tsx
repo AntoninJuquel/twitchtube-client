@@ -4,7 +4,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 
 import { ThemeProvider, createTheme } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 import { setChonkyDefaults } from '@aperturerobotics/chonky';
 import { ChonkyIconFA } from '@aperturerobotics/chonky-icon-fontawesome';
@@ -24,7 +24,7 @@ const customTheme = createTheme({});
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider theme={customTheme}>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
         <HashRouter>
           <Routes>
             <Route path="/" element={<Home />} />

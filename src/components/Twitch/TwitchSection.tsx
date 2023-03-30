@@ -11,10 +11,13 @@ import {
   CardActions,
   Checkbox,
   Icon,
+  Slide,
 } from '@mui/material';
 
 import { Actions } from 'usehooks-ts';
 import { TwitchClip } from 'twitch-api-helix';
+
+import { durationString } from '@/utils/duration';
 
 import TwitchClipCard from './TwitchClipCard';
 import TwitchForm from './TwitchForm';
@@ -34,6 +37,23 @@ export default function TwitchSection({
 }: TwitchNodeProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [clips, setClips] = useState<TwitchClip[]>([]);
+
+  const allClipDefined = clips.every((clip) => Boolean(clip));
+  const allSelected = clips.every((clip) =>
+    Boolean(selectedClips.get(clip?.id))
+  );
+  const someSelected = clips.some((clip) =>
+    Boolean(selectedClips.get(clip?.id))
+  );
+  const duration = clips.reduce((acc, clip) => acc + (clip?.duration || 0), 0);
+  const selectedClipsInSection = clips.filter((clip) =>
+    selectedClips.get(clip?.id)
+  );
+  const selectedDuration = selectedClipsInSection.reduce(
+    (acc, clip) => acc + (clip?.duration || 0),
+    0
+  );
+
   return (
     <Stack spacing={1} margin={1}>
       <Stack direction="row" spacing={1} alignItems="center">
@@ -55,7 +75,34 @@ export default function TwitchSection({
           expandIcon={<Icon>expand_more</Icon>}
           style={{ backgroundColor: '#f5f5f5' }}
         >
-          <Typography>Clips {clips.length}</Typography>
+          <Slide
+            in={allClipDefined && clips.length > 0}
+            direction="left"
+            unmountOnExit
+          >
+            <Stack spacing={5} direction="row" alignItems="center">
+              <Checkbox
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    clips.forEach((clip) => actions.set(clip.id, clip));
+                  } else {
+                    clips.forEach((clip) => actions.remove(clip.id));
+                  }
+                }}
+                checked={allSelected && clips.length > 0}
+                indeterminate={someSelected && !allSelected && clips.length > 0}
+                size="small"
+              />
+              <Typography>
+                Clips {clips.length} - {durationString(duration)}
+              </Typography>
+              <Typography>
+                Selected {selectedClipsInSection.length} -{' '}
+                {durationString(selectedDuration)}
+              </Typography>
+            </Stack>
+          </Slide>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={0.5}>

@@ -44,6 +44,26 @@ export async function postVideoStart(clips: any) {
   return response.data;
 }
 
+export async function getVideoDownload() {
+  const response = await api
+    .get('/video/download', {
+      responseType: 'blob',
+    })
+    .then((res) => {
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.setAttribute('download', 'video.mp4');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      return res;
+    });
+  return response;
+}
+
 export async function postVideoOpen(path?: string) {
   const response = await api.post('/video/open', { path });
   return response.data;
