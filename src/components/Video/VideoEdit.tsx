@@ -3,12 +3,13 @@ import { Button, Dialog, Icon, Slide } from '@mui/material';
 import { TransitionProps } from '@mui/material/transitions';
 
 import { useToggle } from 'usehooks-ts';
-import { TwitchClip } from '@/api';
+import { TwitchClip } from 'twitch-api-helix';
 
 import { SettingsButton } from '@/components/common';
 
 import VideoFlow from './VideoFlow';
 import VideoSettings from './VideoSettings';
+import VideoFolderSelector from './VideoFolderSelector';
 
 type VideoEditProps = {
   trigger: React.ReactElement;

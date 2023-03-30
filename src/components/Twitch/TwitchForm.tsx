@@ -11,10 +11,10 @@ import {
 
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import dayjs from 'dayjs';
+import { TwitchClip, TwitchClipResponseBody } from 'twitch-api-helix';
 
-import axios from 'axios';
-import { Twitch, TwitchClip } from '@/api/Twitch';
 import { useAlert } from '@/hooks';
+import * as api from '@/api';
 
 const validationSchema = yup.object({
   type: yup.string().required('Type is required'),
@@ -25,7 +25,6 @@ const validationSchema = yup.object({
 });
 
 type FormProps = {
-  twitch: Twitch;
   onGetClips: (clips: TwitchClip[]) => void;
 };
 
@@ -37,7 +36,7 @@ export type TwitchFormParams = {
   end: string;
 };
 
-export default function TwitchForm({ twitch, onGetClips }: FormProps) {
+export default function TwitchForm({ onGetClips }: FormProps) {
   const { Alert, hideAlert, showAlert } = useAlert();
   const formik = useFormik({
     initialValues: {
@@ -51,79 +50,26 @@ export default function TwitchForm({ twitch, onGetClips }: FormProps) {
     onSubmit: async (values) => {
       hideAlert();
       onGetClips(Array(10).fill(undefined));
-      try {
-        const response = await axios.get('http://localhost:3000/twitch/clips', {
-          params: values,
+      await api
+        .getTwitchClips(values)
+        .then(({ data }: TwitchClipResponseBody) => {
+          if (data.length === 0) {
+            showAlert({
+              message: `No clips found for ${formik.values.type} ${formik.values.name}`,
+              severity: 'error',
+            });
+          } else {
+            showAlert({
+              message: `Found ${data.length} clips`,
+              severity: 'success',
+            });
+          }
+          onGetClips(data);
+        })
+        .catch((err) => {
+          showAlert({ message: err.response.data.message, severity: 'error' });
+          onGetClips([]);
         });
-        onGetClips(response.data.data);
-      } catch (error) {
-        console.log(error);
-      }
-      // switch (values.type) {
-      //   case 'game': {
-      //     const game = await twitch.getGameByName(values.name);
-      //     if (!game) {
-      //       showAlert({
-      //         message: `Game ${values.name} not found`,
-      //         severity: 'error',
-      //       });
-      //       onGetClips([]);
-      //       return;
-      //     }
-      //     const clips = await twitch.getClips({
-      //       game_id: game.id,
-      //       started_at: values.start,
-      //       ended_at: values.end,
-      //       first: values.first,
-      //     });
-      //     if (clips.data.length === 0) {
-      //       showAlert({
-      //         message: `No clips found for ${values.name}`,
-      //         severity: 'error',
-      //       });
-      //     } else {
-      //       showAlert({
-      //         message: `Found ${clips.data.length} clips for ${values.name}`,
-      //         severity: 'success',
-      //       });
-      //     }
-      //     onGetClips(clips.data);
-      //     break;
-      //   }
-      //   case 'broadcaster': {
-      //     const broadcaster = await twitch.getUserByName(values.name);
-      //     if (!broadcaster) {
-      //       showAlert({
-      //         message: `Broadcaster ${values.name} not found`,
-      //         severity: 'error',
-      //       });
-      //       onGetClips([]);
-      //       return;
-      //     }
-      //     const clips = await twitch.getClips({
-      //       broadcaster_id: broadcaster.id,
-      //       started_at: values.start,
-      //       ended_at: values.end,
-      //       first: values.first,
-      //     });
-      //     if (clips.data.length === 0) {
-      //       showAlert({
-      //         message: `No clips found for ${values.name}`,
-      //         severity: 'error',
-      //       });
-      //     } else {
-      //       showAlert({
-      //         message: `Found ${clips.data.length} clips for ${values.name}`,
-      //         severity: 'success',
-      //       });
-      //     }
-      //     onGetClips(clips.data);
-      //     break;
-      //   }
-
-      //   default:
-      //     break;
-      // }
     },
   });
 

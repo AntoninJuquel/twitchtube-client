@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import GLTransitions from 'gl-transitions';
 import {
   Breadcrumbs,
@@ -10,11 +11,16 @@ import {
   Stack,
   TextField,
   Autocomplete,
+  Checkbox,
+  Box,
+  FormControlLabel,
+  Typography,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-
+import * as api from '@/api';
 import { useTabs } from '@/hooks';
+import VideoFolderSelector from './VideoFolderSelector';
 
 type VideoSettingsProps = {
   open: boolean;
@@ -43,23 +49,59 @@ const TRANSITIONS = GLTransitions.map((transition) => transition.name).concat(
 );
 
 export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
+  const [openFolderSelector, setOpenFolderSelector] = useState(false);
+  const [initialValues, setInitialValues] = useState<object | null>();
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const data = await api.getVideoConfig();
+      setInitialValues({
+        width: data.width,
+        height: data.height,
+        fps: data.fps,
+        transitionName: data.transition.name,
+        transitionDuration: data.transition.duration,
+        keepSourceAudio: data.keepSourceAudio,
+        outPath: data.outPath,
+      });
+    })();
+  }, [open]);
+
   const formik = useFormik({
+    enableReinitialize: true,
     initialValues: {
       width: 1920,
       height: 1080,
       fps: 30,
       transitionName: 'fade',
       transitionDuration: 0.5,
+      keepSourceAudio: true,
+      outPath: '',
+      ...initialValues,
     },
     validationSchema,
-    onReset: onClose,
     onSubmit: async (values) => {
-      const { width, height, fps, transitionName, transitionDuration } = values;
-      localStorage.setItem('width', width.toString());
-      localStorage.setItem('height', height.toString());
-      localStorage.setItem('fps', fps.toString());
-      localStorage.setItem('transitionName', transitionName);
-      localStorage.setItem('transitionDuration', transitionDuration.toString());
+      const {
+        width,
+        height,
+        fps,
+        transitionName,
+        transitionDuration,
+        keepSourceAudio,
+        outPath,
+      } = values;
+      await api.postVideoConfig({
+        width,
+        height,
+        fps,
+        transition: {
+          name: transitionName,
+          duration: transitionDuration,
+        },
+        keepSourceAudio,
+        outPath,
+      });
       onClose();
     },
   });
@@ -125,6 +167,30 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
                   onBlur={formik.handleBlur}
                   size="small"
                 />
+                <Box>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        id="keepSourceAudio"
+                        name="keepSourceAudio"
+                        value={formik.values.keepSourceAudio}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        checked={formik.values.keepSourceAudio}
+                      />
+                    }
+                    label="Keep source audio"
+                  />
+                </Box>
+                <Button onClick={() => setOpenFolderSelector(true)}>
+                  {formik.values.outPath}
+                </Button>
+                <VideoFolderSelector
+                  open={openFolderSelector}
+                  value={formik.values.outPath}
+                  onChange={(value) => formik.handleChange('outPath')(value)}
+                  onClose={() => setOpenFolderSelector(false)}
+                />
               </>
             )}
 
@@ -139,6 +205,7 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
                     // eslint-disable-next-line react/jsx-props-no-spreading
                     <TextField {...params} label="Name" />
                   )}
+                  defaultValue={formik.values.transitionName}
                   value={formik.values.transitionName}
                   onChange={(event, newValue) => {
                     formik.handleChange('transitionName')(newValue as string);
@@ -169,7 +236,13 @@ export default function VideoSettings({ open, onClose }: VideoSettingsProps) {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button type="reset" onClick={formik.handleReset}>
+          <Button
+            type="reset"
+            onClick={(e) => {
+              formik.handleReset(e);
+              onClose();
+            }}
+          >
             Cancel
           </Button>
           <Button type="submit">Save</Button>

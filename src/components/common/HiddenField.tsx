@@ -18,7 +18,9 @@ export default function HiddenField({
 
   return (
     <FormControl variant="outlined">
-      <InputLabel htmlFor={id}>{label}</InputLabel>
+      <InputLabel htmlFor={id} size="small">
+        {label}
+      </InputLabel>
       <OutlinedInput
         id={id}
         label={label}

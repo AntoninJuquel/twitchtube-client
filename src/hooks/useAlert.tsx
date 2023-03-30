@@ -6,13 +6,23 @@ import {
   AlertColor,
   Alert as MuiAlert,
   Icon,
+  Snackbar,
 } from '@mui/material';
+
+type SnackbarAlert = {
+  autoHideDuration?: number;
+  anchorOrigin?: {
+    vertical: 'top' | 'bottom';
+    horizontal: 'left' | 'center' | 'right';
+  };
+};
 
 type AlertMessage = {
   title?: string;
   show?: boolean;
   message: string;
   severity: AlertColor;
+  snackbar?: SnackbarAlert;
 };
 
 export default function useAlert() {
@@ -23,8 +33,8 @@ export default function useAlert() {
   });
 
   const showAlert = useCallback(
-    ({ title, message, severity }: AlertMessage) => {
-      setAlert({ title, message, severity, show: true });
+    (alertMessage: AlertMessage) => {
+      setAlert({ ...alertMessage, show: true });
     },
     [setAlert]
   );
@@ -57,5 +67,21 @@ export default function useAlert() {
     [alert, hideAlert]
   );
 
-  return { Alert, showAlert, hideAlert };
+  const SnackbarAlert = useMemo(
+    () => (
+      <Snackbar
+        open={alert.show}
+        autoHideDuration={alert.snackbar?.autoHideDuration}
+        anchorOrigin={alert.snackbar?.anchorOrigin}
+      >
+        <MuiAlert severity={alert.severity}>
+          {alert.title && <AlertTitle>{alert.title}</AlertTitle>}
+          {alert.message}
+        </MuiAlert>
+      </Snackbar>
+    ),
+    [alert]
+  );
+
+  return { Alert, SnackbarAlert, showAlert, hideAlert };
 }

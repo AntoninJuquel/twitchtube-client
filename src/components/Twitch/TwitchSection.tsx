@@ -14,13 +14,12 @@ import {
 } from '@mui/material';
 
 import { Actions } from 'usehooks-ts';
+import { TwitchClip } from 'twitch-api-helix';
 
-import { Twitch, TwitchClip } from '@/api';
 import TwitchClipCard from './TwitchClipCard';
 import TwitchForm from './TwitchForm';
 
 type TwitchNodeProps = {
-  twitch: Twitch;
   id: string;
   removeSection: (id: string) => void;
   selectedClips: Omit<Map<string, TwitchClip>, 'set' | 'clear' | 'delete'>;
@@ -28,7 +27,6 @@ type TwitchNodeProps = {
 };
 
 export default function TwitchSection({
-  twitch,
   id,
   removeSection,
   selectedClips,
@@ -43,7 +41,6 @@ export default function TwitchSection({
           <Icon>delete</Icon>
         </IconButton>
         <TwitchForm
-          twitch={twitch}
           onGetClips={(newClips) => {
             setClips(newClips);
             setExpanded(newClips.length > 0);

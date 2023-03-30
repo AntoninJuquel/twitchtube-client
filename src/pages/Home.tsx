@@ -1,10 +1,8 @@
 import { v4 as uuid } from 'uuid';
-
 import { Button, Collapse, Box, Icon } from '@mui/material';
-
 import { TransitionGroup } from 'react-transition-group';
-
 import { useMap } from 'usehooks-ts';
+import { TwitchClip } from 'twitch-api-helix';
 
 import {
   CustomFab,
@@ -14,12 +12,6 @@ import {
   TwitchSettings,
   VideoEdit,
 } from '@/components';
-import { Twitch, TwitchClip } from '@/api';
-
-const twitch = new Twitch(
-  localStorage.getItem('clientId') || '',
-  localStorage.getItem('clientSecret') || ''
-);
 
 function Home() {
   const [sections, sectionsActions] = useMap<string, string>(
@@ -41,7 +33,6 @@ function Home() {
         {Array.from(sections.entries()).map(([key]) => (
           <Collapse key={key} timeout={100}>
             <TwitchSection
-              twitch={twitch}
               id={key}
               removeSection={removeSection}
               selectedClips={selectedClips}
@@ -55,11 +46,7 @@ function Home() {
 
       <ScrollToTop />
 
-      <SettingsButton
-        SettingsComponent={({ open, onClose }) =>
-          TwitchSettings({ twitch, open, onClose })
-        }
-      />
+      <SettingsButton SettingsComponent={TwitchSettings} />
 
       <VideoEdit
         trigger={

@@ -10,12 +10,12 @@ import {
 } from '@mui/material';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
-import { Twitch } from '@/api';
-import { useTabs } from '@/hooks';
+
+import * as api from '@/api';
+import { useAlert, useTabs } from '@/hooks';
 import HiddenField from '@/components/common/HiddenField';
 
 type TwitchSettingsProps = {
-  twitch: Twitch;
   open: boolean;
   onClose: () => void;
 };
@@ -31,18 +31,47 @@ const twitchValidationSchema = yup.object({
 });
 
 function ServerSettingsTab({ onClose }: { onClose: () => void }) {
+  const { SnackbarAlert, showAlert } = useAlert();
   const formik = useFormik({
     initialValues: {
-      endpoint: 'localhost',
-      port: 80,
+      endpoint: localStorage.getItem('endpoint') || 'localhost',
+      port: parseInt(localStorage.getItem('port') || '3000', 10),
     },
     validationSchema: serverValidationSchema,
     onReset: onClose,
     onSubmit: async (values) => {
       const { endpoint, port } = values;
-      localStorage.setItem('endpoint', endpoint);
-      localStorage.setItem('port', port.toString());
-      onClose();
+
+      api
+        .setBaseURL(endpoint, port)
+        .then(() => {
+          showAlert({
+            message: 'Server config saved successfully',
+            severity: 'success',
+            snackbar: {
+              autoHideDuration: 3000,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center',
+              },
+            },
+          });
+          localStorage.setItem('endpoint', endpoint);
+          localStorage.setItem('port', port.toString());
+        })
+        .catch((err) => {
+          showAlert({
+            message: err.message,
+            severity: 'error',
+            snackbar: {
+              autoHideDuration: 3000,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center',
+              },
+            },
+          });
+        });
     },
   });
   return (
@@ -75,6 +104,7 @@ function ServerSettingsTab({ onClose }: { onClose: () => void }) {
             type="number"
             size="small"
           />
+          {SnackbarAlert}
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -87,27 +117,45 @@ function ServerSettingsTab({ onClose }: { onClose: () => void }) {
   );
 }
 
-function TwitchSettingsTab({
-  twitch,
-  onClose,
-}: {
-  twitch: Twitch;
-  onClose: () => void;
-}) {
+function TwitchSettingsTab({ onClose }: { onClose: () => void }) {
+  const { SnackbarAlert, showAlert } = useAlert();
   const formik = useFormik({
     initialValues: {
-      clientId: twitch?.getClientId || '',
-      clientSecret: twitch?.getClientSecret || '',
+      clientId: '',
+      clientSecret: '',
     },
     validationSchema: twitchValidationSchema,
     onReset: onClose,
     onSubmit: async (values) => {
       const { clientId, clientSecret } = values;
-      localStorage.setItem('clientId', clientId);
-      localStorage.setItem('clientSecret', clientSecret);
-      twitch?.setClientId(clientId);
-      twitch?.setClientSecret(clientSecret);
-      onClose();
+      api
+        .postTwitchConfig({ clientId, clientSecret })
+        .then(() => {
+          showAlert({
+            message: 'Twitch config saved successfully',
+            severity: 'success',
+            snackbar: {
+              autoHideDuration: 3000,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center',
+              },
+            },
+          });
+        })
+        .catch((err) => {
+          showAlert({
+            message: err.message,
+            severity: 'error',
+            snackbar: {
+              autoHideDuration: 3000,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center',
+              },
+            },
+          });
+        });
     },
   });
   return (
@@ -137,6 +185,7 @@ function TwitchSettingsTab({
             }
             size="small"
           />
+          {SnackbarAlert}
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -150,11 +199,9 @@ function TwitchSettingsTab({
 }
 
 function SettingsTab({
-  twitch,
   onClose,
   settings,
 }: {
-  twitch: Twitch;
   onClose: () => void;
   settings: string;
 }) {
@@ -162,17 +209,13 @@ function SettingsTab({
     case 'server':
       return <ServerSettingsTab onClose={onClose} />;
     case 'twitch':
-      return <TwitchSettingsTab twitch={twitch} onClose={onClose} />;
+      return <TwitchSettingsTab onClose={onClose} />;
     default:
       return null;
   }
 }
 
-export default function TwitchSettings({
-  twitch,
-  open,
-  onClose,
-}: TwitchSettingsProps) {
+export default function TwitchSettings({ open, onClose }: TwitchSettingsProps) {
   const { Tabs, activeTab } = useTabs('server', [
     {
       label: 'Server',
@@ -187,7 +230,7 @@ export default function TwitchSettings({
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
       <DialogTitle>{Tabs}</DialogTitle>
-      <SettingsTab twitch={twitch} onClose={onClose} settings={activeTab} />
+      <SettingsTab onClose={onClose} settings={activeTab} />
     </Dialog>
   );
 }

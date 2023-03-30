@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardMedia, Skeleton } from '@mui/material';
-import type { TwitchClip } from '@/api';
+import { TwitchClip } from 'twitch-api-helix';
 
 export enum TwitchClipDisplayMode {
   Video = 'Video',

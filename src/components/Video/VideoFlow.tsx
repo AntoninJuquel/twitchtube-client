@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 
 import ReactFlow, {
   MiniMap,
@@ -16,7 +15,9 @@ import ReactFlow, {
 } from 'reactflow';
 
 import { Fab, Icon, Zoom, colors } from '@mui/material';
-import { TwitchClip } from '@/api';
+import { TwitchClip } from 'twitch-api-helix';
+
+import * as api from '@/api';
 
 import VideoPanel from './VideoPanel';
 import VideoNode from './VideoNode';
@@ -76,11 +77,20 @@ function isLinearGraph(nodes: Node[], edges: Edge[]): Node[] | null {
   return linearNodes;
 }
 
-function upload(clips: TwitchClip[]) {
-  console.log(clips.map((clip) => clip.title));
-  // axios.post('http://217.160.192.110:80/video', {
-  //   clips,
-  // });
+async function upload(clips: TwitchClip[]) {
+  const data = clips.map((clip) => {
+    const slicePoint = clip.thumbnail_url.indexOf('-preview-');
+    const videoUrl = `${clip.thumbnail_url.slice(0, slicePoint)}.mp4`;
+    return {
+      layers: [
+        {
+          type: 'video',
+          path: videoUrl,
+        },
+      ],
+    };
+  });
+  await api.postVideoStart(data);
 }
 
 function Flow({ selectedClips }: VideoFlowProps) {
