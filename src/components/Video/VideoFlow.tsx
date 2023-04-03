@@ -188,7 +188,7 @@ function Flow({ selectedClips }: VideoFlowProps) {
       <VideoInfoPanel
         selectedClips={selectedClips}
         upload={uploadResult}
-        linearGraph={Boolean(linearGraph)}
+        linearGraph={linearGraph}
       />
       <Controls>
         <ControlButton onClick={autoConnect} title="auto connect">

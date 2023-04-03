@@ -92,11 +92,9 @@ export default function TwitchForm({ onGetClips }: FormProps) {
             <Icon>sports_esports</Icon>
           </Button>
           <Button
-            variant={
-              formik.values.type === 'broadcaster' ? 'contained' : 'outlined'
-            }
+            variant={formik.values.type === 'user' ? 'contained' : 'outlined'}
             onClick={() => {
-              formik.setFieldValue('type', 'broadcaster');
+              formik.setFieldValue('type', 'user');
             }}
           >
             <Icon>person</Icon>

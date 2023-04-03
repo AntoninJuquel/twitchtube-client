@@ -9,7 +9,6 @@ import { SettingsButton } from '@/components/common';
 
 import VideoFlow from './VideoFlow';
 import VideoSettings from './VideoSettings';
-import VideoFolderSelector from './VideoFolderSelector';
 
 type VideoEditProps = {
   trigger: React.ReactElement;
