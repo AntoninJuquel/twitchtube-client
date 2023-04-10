@@ -1,141 +1,93 @@
 import { useState } from 'react';
-
+import { useToggle } from 'usehooks-ts';
 import {
-  IconButton,
-  Stack,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Typography,
+  IconButton,
   Grid,
-  CardActions,
-  Checkbox,
   Icon,
+  Stack,
+  Typography,
+  Checkbox,
   Slide,
+  Fade,
 } from '@mui/material';
 
-import { Actions } from 'usehooks-ts';
-import { TwitchClip } from 'twitch-api-helix';
+import { useVideo } from '@/contexts/VideoContext';
+import { formatTwitchClip } from '@/utils/twitch';
+import { durationString, totalDuration } from '@/utils/duration';
+import { Clip } from '@/remotion/Clip';
 
-import { durationString } from '@/utils/duration';
-
-import TwitchClipCard from './TwitchClipCard';
+import { GenericTwitchResponse, TwitchClip } from 'twitch-api-helix';
 import TwitchForm from './TwitchForm';
+import TwitchClipCard from './TwitchClipCard';
 
-type TwitchNodeProps = {
-  id: string;
-  removeSection: (id: string) => void;
-  selectedClips: Omit<Map<string, TwitchClip>, 'set' | 'clear' | 'delete'>;
-  actions: Actions<string, TwitchClip>;
+type Props = {
+  removeSection: () => void;
 };
 
-export default function TwitchSection({
-  id,
-  removeSection,
-  selectedClips,
-  actions,
-}: TwitchNodeProps) {
-  const [expanded, setExpanded] = useState<boolean>(false);
-  const [clips, setClips] = useState<TwitchClip[]>([]);
+export default function TwitchSection({ removeSection }: Props) {
+  const [expanded, toggleExpanded, setExpanded] = useToggle(false);
+  const { clips, addClip, setClipSelect } = useVideo();
+  const [clipIds, setClipIds] = useState<string[]>([]);
+  const sectionClips = clipIds.map((id) => clips.get(id)) as Clip[];
+  const sectionClipsSelected = sectionClips.filter((clip) => clip?.selected);
+  const allSelected = sectionClipsSelected.length === sectionClips.length;
+  const someSelected = sectionClipsSelected.length > 0 && !allSelected;
 
-  const allClipDefined = clips.every((clip) => Boolean(clip));
-  const allSelected = clips.every((clip) =>
-    Boolean(selectedClips.get(clip?.id))
-  );
-  const someSelected = clips.some((clip) =>
-    Boolean(selectedClips.get(clip?.id))
-  );
-  const duration = clips.reduce((acc, clip) => acc + (clip?.duration || 0), 0);
-  const selectedClipsInSection = clips.filter((clip) =>
-    selectedClips.get(clip?.id)
-  );
-  const selectedDuration = selectedClipsInSection.reduce(
-    (acc, clip) => acc + (clip?.duration || 0),
-    0
-  );
+  const handleResult = (res: GenericTwitchResponse<TwitchClip>) => {
+    res.data.forEach((clip) => addClip(formatTwitchClip(clip)));
+    setClipIds(res.data.map((clip) => clip.id));
+    setExpanded(true);
+  };
+
+  const toggleAllSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    sectionClips.forEach((clip) => {
+      setClipSelect(clip.id, event.target.checked);
+    });
+  };
 
   return (
-    <Stack spacing={1} margin={1}>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <IconButton onClick={() => removeSection(id)} color="primary">
-          <Icon>delete</Icon>
-        </IconButton>
-        <TwitchForm
-          onGetClips={(newClips) => {
-            setClips(newClips);
-            setExpanded(newClips.length > 0);
-          }}
-        />
-      </Stack>
-
-      <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
-        <AccordionSummary
-          aria-controls="panel1d-content"
-          id="panel1d-header"
-          expandIcon={<Icon>expand_more</Icon>}
-          style={{ backgroundColor: '#f5f5f5' }}
-        >
-          <Slide
-            in={allClipDefined && clips.length > 0}
-            direction="left"
-            unmountOnExit
-          >
-            <Stack spacing={5} direction="row" alignItems="center">
+    <Accordion expanded={expanded} onChange={toggleExpanded}>
+      <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
+        <Stack>
+          <Stack direction="row" spacing={2} alignItems="center" width="100%">
+            <IconButton onClick={removeSection}>
+              <Icon>delete</Icon>
+            </IconButton>
+            <TwitchForm handleResult={handleResult} />
+          </Stack>
+          <Slide in={sectionClips.length > 0} direction="right" unmountOnExit>
+            <Stack direction="row" spacing={2} alignItems="center" width="100%">
               <Checkbox
+                onChange={toggleAllSelected}
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    clips.forEach((clip) => actions.set(clip.id, clip));
-                  } else {
-                    clips.forEach((clip) => actions.remove(clip.id));
-                  }
-                }}
-                checked={allSelected && clips.length > 0}
-                indeterminate={someSelected && !allSelected && clips.length > 0}
-                size="small"
+                checked={allSelected && sectionClips.length > 0}
+                indeterminate={someSelected && sectionClips.length > 0}
               />
               <Typography>
-                Clips {clips.length} - {durationString(duration)}
+                Clips {sectionClips.length} - {durationString(totalDuration(sectionClips))}
               </Typography>
-              <Typography>
-                Selected {selectedClipsInSection.length} -{' '}
-                {durationString(selectedDuration)}
-              </Typography>
+              <Fade in={sectionClipsSelected.length > 0} unmountOnExit>
+                <Typography>
+                  Selected {sectionClipsSelected.length} -{' '}
+                  {durationString(totalDuration(sectionClipsSelected))}
+                </Typography>
+              </Fade>
             </Stack>
           </Slide>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Grid container spacing={0.5}>
-            {clips.map((clip, index) => (
-              <Grid key={clip?.id ?? index} item>
-                <TwitchClipCard
-                  clip={clip}
-                  footer={
-                    clip && (
-                      <CardActions
-                        sx={{
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Checkbox
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              actions.set(clip.id, clip);
-                            } else {
-                              actions.remove(clip.id);
-                            }
-                          }}
-                          checked={Boolean(selectedClips.get(clip.id))}
-                        />
-                      </CardActions>
-                    )
-                  }
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </AccordionDetails>
-      </Accordion>
-    </Stack>
+        </Stack>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Grid container spacing={0.5} justifyContent="center">
+          {sectionClips.map((clip) => (
+            <Grid key={clip.id} item>
+              <TwitchClipCard clip={clip} checkbox />
+            </Grid>
+          ))}
+        </Grid>
+      </AccordionDetails>
+    </Accordion>
   );
 }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { GenericTwitchResponse, TwitchClip } from 'twitch-api-helix';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000',
@@ -23,7 +24,7 @@ export async function postTwitchConfig(config: any) {
 }
 
 export async function getTwitchClips(params: any) {
-  const response = await api.get('/twitch/clips', { params });
+  const response = await api.get<GenericTwitchResponse<TwitchClip>>('/twitch/clips', { params });
   return response.data;
 }
 

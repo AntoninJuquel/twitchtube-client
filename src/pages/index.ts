@@ -1,4 +1,4 @@
-import Home from './Home';
-import NotFound from './NotFound';
+import Twitch from './Twitch';
+import Video from './Video';
 
-export { Home, NotFound };
+export { Twitch, Video };

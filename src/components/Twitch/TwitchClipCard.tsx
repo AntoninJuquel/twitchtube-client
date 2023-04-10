@@ -1,31 +1,24 @@
-import { Card, CardHeader, CardMedia, Skeleton } from '@mui/material';
-import { TwitchClip } from 'twitch-api-helix';
-
-export enum TwitchClipDisplayMode {
-  Video = 'Video',
-  Image = 'Image',
-  Text = 'Text',
-}
+import { useState } from 'react';
+import { Card, CardHeader, CardMedia, CardActions, Checkbox, Tabs, Tab, Icon } from '@mui/material';
+import { Clip } from '@/remotion/Clip';
+import { useVideo } from '@/contexts/VideoContext';
+import { TwitchClipDisplayMode } from '@/types/twitch';
 
 type TwitchClipProps = {
-  clip?: TwitchClip;
-  header?: React.ReactNode;
-  footer?: React.ReactNode;
-  children?: React.ReactNode;
-  cardProps?: React.ComponentProps<typeof Card>;
-  displayMode?: TwitchClipDisplayMode;
+  clip: Clip;
 };
 
-type TwitchClipDisplayProps = {
-  clip: TwitchClip;
+type TwitchClipCardProps = TwitchClipProps & {
+  checkbox?: boolean;
+  tab?: boolean | TwitchClipDisplayMode;
 };
 
-function TwitchVideoDisplay({ clip }: TwitchClipDisplayProps) {
+export function TwitchClipCardVideo({ clip }: TwitchClipProps) {
   return (
     <CardMedia>
       <iframe
         title={clip.id}
-        src={`${clip.embed_url}&parent=${window.location.hostname}`}
+        src={`${clip.embedUrl}&parent=${window.location.hostname}`}
         width={448}
         height={252}
         allowFullScreen
@@ -35,11 +28,11 @@ function TwitchVideoDisplay({ clip }: TwitchClipDisplayProps) {
   );
 }
 
-function TwitchImageDisplay({ clip }: TwitchClipDisplayProps) {
+export function TwitchClipCardImage({ clip }: TwitchClipProps) {
   return (
     <CardMedia
-      src={clip.thumbnail_url}
-      image={clip.thumbnail_url}
+      src={clip.thumbnailUrl}
+      image={clip.thumbnailUrl}
       sx={{
         height: 252,
         width: 448,
@@ -50,60 +43,70 @@ function TwitchImageDisplay({ clip }: TwitchClipDisplayProps) {
       <CardHeader
         title={clip.title}
         titleTypographyProps={{ color: 'white' }}
-        subheader={clip.broadcaster_name}
+        subheader={clip.broadcaster}
         subheaderTypographyProps={{ color: 'white' }}
       />
     </CardMedia>
   );
 }
 
-function TwitchTextDisplay({ clip }: TwitchClipDisplayProps) {
-  return <CardHeader title={clip.title} subheader={clip.broadcaster_name} />;
+export function TwitchClipCardText({ clip }: TwitchClipProps) {
+  return <CardHeader title={clip.title} subheader={clip.broadcaster} />;
 }
 
-const TwitchClipDisplay: Record<
-  TwitchClipDisplayMode,
-  (props: TwitchClipDisplayProps) => JSX.Element
-> = {
-  [TwitchClipDisplayMode.Video]: TwitchVideoDisplay,
-  [TwitchClipDisplayMode.Image]: TwitchImageDisplay,
-  [TwitchClipDisplayMode.Text]: TwitchTextDisplay,
+const TwitchClipDisplay: Record<TwitchClipDisplayMode, (props: TwitchClipProps) => JSX.Element> = {
+  [TwitchClipDisplayMode.Video]: TwitchClipCardVideo,
+  [TwitchClipDisplayMode.Image]: TwitchClipCardImage,
+  [TwitchClipDisplayMode.Text]: TwitchClipCardText,
 };
 
-export default function TwitchClipCard({
-  clip,
-  header,
-  footer,
-  children,
-  cardProps,
-  displayMode,
-}: TwitchClipProps) {
+export function TwitchClipCardTab({ clip }: TwitchClipProps) {
+  const [tab, setTab] = useState<TwitchClipDisplayMode>(TwitchClipDisplayMode.Video);
+  const handleChange = (event: React.SyntheticEvent, newValue: TwitchClipDisplayMode) => {
+    setTab(newValue);
+  };
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <Card variant="outlined" {...cardProps}>
-      {header}
-      {clip ? (
-        TwitchClipDisplay[displayMode ?? TwitchClipDisplayMode.Video]({ clip })
-      ) : (
-        <Skeleton
-          variant="rectangular"
-          height={252}
-          width={448}
-          animation="wave"
-        />
-      )}
+    <>
+      <Tabs value={tab} onChange={handleChange}>
+        <Tab value={TwitchClipDisplayMode.Video} icon={<Icon>play_circle</Icon>} />
+        <Tab value={TwitchClipDisplayMode.Image} icon={<Icon>image</Icon>} />
+        <Tab value={TwitchClipDisplayMode.Text} icon={<Icon>text_fields</Icon>} />
+      </Tabs>
+      {TwitchClipDisplay[tab]({ clip })}
+    </>
+  );
+}
 
-      {children}
-      {footer}
+export function TwitchClipCardCheckBox({ clip }: TwitchClipProps) {
+  const { setClipSelect } = useVideo();
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setClipSelect(clip.id, event.target.checked);
+  };
+  return (
+    <CardActions>
+      <Checkbox checked={clip.selected} onChange={handleChange} />
+    </CardActions>
+  );
+}
+
+export default function TwitchClipCard({ clip, tab, checkbox }: TwitchClipCardProps) {
+  return (
+    <Card
+      sx={{
+        width: 448,
+      }}
+    >
+      {typeof tab === 'boolean' && tab ? (
+        <TwitchClipCardTab clip={clip} />
+      ) : (
+        TwitchClipDisplay[tab || TwitchClipDisplayMode.Video]({ clip })
+      )}
+      {checkbox && <TwitchClipCardCheckBox clip={clip} />}
     </Card>
   );
 }
 
 TwitchClipCard.defaultProps = {
-  clip: undefined,
-  displayMode: TwitchClipDisplayMode.Video,
-  header: null,
-  footer: null,
-  children: null,
-  cardProps: {},
+  checkbox: false,
+  tab: false,
 };

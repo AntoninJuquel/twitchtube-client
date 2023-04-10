@@ -1,20 +1,30 @@
+import { useState } from 'react';
+import { useToggle } from 'usehooks-ts';
 import { useFormik } from 'formik';
+import { sub } from 'date-fns';
 import * as yup from 'yup';
 import {
+  ToggleButtonGroup,
+  ToggleButton,
   TextField,
-  Button,
-  ButtonGroup,
-  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Breadcrumbs,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Button,
   Icon,
+  Stack,
+  SelectChangeEvent,
 } from '@mui/material';
-
-import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
-import { TwitchClip, TwitchClipResponseBody } from 'twitch-api-helix';
-import { sub } from 'date-fns';
-
-import { useAlert } from '@/hooks';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import { TwitchClipType } from '@/types/twitch';
 import * as api from '@/api';
+import { GenericTwitchResponse, TwitchClip } from 'twitch-api-helix';
 
 const validationSchema = yup.object({
   type: yup.string().required('Type is required'),
@@ -24,124 +34,196 @@ const validationSchema = yup.object({
   end: yup.date().required('End is required'),
 });
 
-type FormProps = {
-  onGetClips: (clips: TwitchClip[]) => void;
+const typeLabel: Record<TwitchClipType, string> = {
+  game: 'Game name',
+  user: 'Broadcaster name',
 };
 
-export type TwitchFormParams = {
-  type: string;
-  name: string;
-  first: number;
-  start: string;
-  end: string;
+type CustomPeriodButtonProps = {
+  start: Date;
+  end: Date;
+  onSubmit: (start: Date, end: Date) => void;
 };
 
-export default function TwitchForm({ onGetClips }: FormProps) {
-  const { Alert, hideAlert, showAlert } = useAlert();
+function CustomPeriodButton({ start, end, onSubmit }: CustomPeriodButtonProps) {
+  const [open, toggleDialog] = useToggle(false);
+  const [startDate, setStartDate] = useState<Date | null>(start);
+  const [endDate, setEndDate] = useState<Date | null>(end);
+  return (
+    <>
+      <IconButton
+        onClick={(e) => {
+          e.stopPropagation();
+          setStartDate(start);
+          setEndDate(end);
+          toggleDialog();
+        }}
+      >
+        <Icon>event</Icon>
+      </IconButton>
+      <Dialog
+        open={open}
+        onClose={(e) => {
+          (e as Event)?.stopPropagation?.();
+          toggleDialog();
+        }}
+        maxWidth="lg"
+      >
+        <DialogContent
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Breadcrumbs separator="-">
+            <DateCalendar value={startDate} onChange={setStartDate} />
+            <DateCalendar value={endDate} onChange={setEndDate} />
+          </Breadcrumbs>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleDialog();
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleDialog();
+              if (!startDate || !endDate) return;
+              onSubmit(startDate, endDate);
+            }}
+          >
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
+
+type Props = {
+  handleResult: (values: GenericTwitchResponse<TwitchClip>) => void;
+};
+
+export default function TwitchForm({ handleResult }: Props) {
   const formik = useFormik({
+    isInitialValid: false,
+    validationSchema,
     initialValues: {
-      type: 'game',
+      type: TwitchClipType.game,
       name: '',
       first: 10,
-      start: sub(new Date(), { days: 1 }),
+      start: sub(new Date(), { weeks: 1 }),
       end: new Date(),
     },
-    validationSchema,
     onSubmit: async (values) => {
-      hideAlert();
-      onGetClips(Array(10).fill(undefined));
-      await api
-        .getTwitchClips(values)
-        .then(({ data }: TwitchClipResponseBody) => {
-          if (data.length === 0) {
-            showAlert({
-              message: `No clips found for ${formik.values.type} ${formik.values.name}`,
-              severity: 'error',
-            });
-          } else {
-            showAlert({
-              message: `Found ${data.length} clips`,
-              severity: 'success',
-            });
-          }
-          onGetClips(data);
-        })
-        .catch((err) => {
-          showAlert({ message: err.response.data.message, severity: 'error' });
-          onGetClips([]);
-        });
+      const res = await api.getTwitchClips(values);
+      handleResult(res);
     },
   });
 
+  const { values, errors, isValid, handleChange, handleSubmit, setFieldValue } = formik;
+
+  const handleChangeToggleButton = (event: React.MouseEvent<HTMLElement>, newType: string) => {
+    event.stopPropagation();
+    setFieldValue('type', newType);
+  };
+
+  const [period, setPeriod] = useState('weeks');
+  const handleChangeSelect = (event: SelectChangeEvent) => {
+    const { value } = event.target;
+    setFieldValue('start', sub(new Date(), { [value]: 1 }));
+    setFieldValue('end', new Date());
+    setPeriod(event.target.value);
+  };
+  const handleCustomPeriod = (start: Date, end: Date) => {
+    setFieldValue('start', start);
+    setFieldValue('end', end);
+    setPeriod('custom');
+  };
   return (
-    <form onSubmit={formik.handleSubmit}>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <ButtonGroup
-          sx={{
-            '& .MuiButton-root': {
-              borderRadius: 50,
-            },
-          }}
+    <form onSubmit={handleSubmit}>
+      <Stack direction="row" spacing={2} alignItems="center" width="100%">
+        <ToggleButtonGroup
+          id="type"
+          aria-label="type"
+          color="primary"
+          value={values.type}
+          onChange={handleChangeToggleButton}
+          exclusive
         >
-          <Button
-            variant={formik.values.type === 'game' ? 'contained' : 'outlined'}
-            onClick={() => {
-              formik.setFieldValue('type', 'game');
-            }}
-          >
+          <ToggleButton value={TwitchClipType.game}>
             <Icon>sports_esports</Icon>
-          </Button>
-          <Button
-            variant={formik.values.type === 'user' ? 'contained' : 'outlined'}
-            onClick={() => {
-              formik.setFieldValue('type', 'user');
-            }}
-          >
+          </ToggleButton>
+          <ToggleButton value={TwitchClipType.user}>
             <Icon>person</Icon>
-          </Button>
-        </ButtonGroup>
+          </ToggleButton>
+        </ToggleButtonGroup>
         <TextField
           id="name"
           name="name"
-          label={formik.values.type === 'game' ? 'Game' : 'Broadcaster'}
-          value={formik.values.name}
-          onChange={formik.handleChange}
-          error={formik.touched.name && Boolean(formik.errors.name)}
-          helperText={formik.touched.name && formik.errors.name}
+          label={typeLabel[values.type]}
+          variant="outlined"
           size="small"
+          onClick={(e) => e.stopPropagation()}
+          value={values.name}
+          onChange={handleChange}
+          error={!!errors.name}
         />
         <TextField
           id="first"
+          name="first"
           label="Max"
+          variant="outlined"
+          size="small"
           type="number"
           InputProps={{
-            inputProps: { min: 1, first: 100 },
+            inputProps: { min: 1, max: 100 },
           }}
-          value={formik.values.first}
-          onChange={formik.handleChange}
-          error={formik.touched.first && Boolean(formik.errors.first)}
-          helperText={formik.touched.first && formik.errors.first}
-          size="small"
+          onClick={(e) => e.stopPropagation()}
+          value={values.first}
+          onChange={handleChange}
         />
-        <Breadcrumbs separator="-">
-          <MobileDateTimePicker
-            label="Start"
-            value={formik.values.start}
-            onAccept={(e) => formik.setFieldValue('start', e, true)}
-            slotProps={{ textField: { size: 'small' } }}
-          />
-
-          <MobileDateTimePicker
-            label="End"
-            value={formik.values.end}
-            onAccept={(e) => formik.setFieldValue('end', e, true)}
-            slotProps={{ textField: { size: 'small' } }}
-          />
-        </Breadcrumbs>
-        <Button color="primary" variant="contained" type="submit">
+        <FormControl>
+          <InputLabel id="period" size="small">
+            Period
+          </InputLabel>
+          <Select
+            labelId="period"
+            id="period"
+            label="Period"
+            value={period}
+            onChange={handleChangeSelect}
+            size="small"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MenuItem value="years">This Year</MenuItem>
+            <MenuItem value="months">This Month</MenuItem>
+            <MenuItem value="weeks">This week</MenuItem>
+            <MenuItem value="days">This day</MenuItem>
+            <MenuItem
+              value="custom"
+              hidden
+              style={{
+                display: 'none',
+              }}
+            >
+              {values.start?.toLocaleDateString() ?? ''} - {values.end?.toLocaleDateString() ?? ''}
+            </MenuItem>
+          </Select>
+        </FormControl>
+        <CustomPeriodButton start={values.start} end={values.end} onSubmit={handleCustomPeriod} />
+        <Button
+          variant="contained"
+          type="submit"
+          onClick={(e) => e.stopPropagation()}
+          disabled={!isValid}
+        >
           Search
         </Button>
-        {Alert}
       </Stack>
     </form>
   );

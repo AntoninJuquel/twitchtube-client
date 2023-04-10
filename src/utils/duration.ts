@@ -1,9 +1,5 @@
-import {
-  secondsToHours,
-  secondsToMinutes,
-  hoursToMinutes,
-  minutesToSeconds,
-} from 'date-fns';
+import { Clip } from '@/remotion/Clip';
+import { secondsToHours, secondsToMinutes, hoursToMinutes, minutesToSeconds } from 'date-fns';
 
 export function formatDuration(num: number | string): string {
   return num.toString().padStart(2, '0');
@@ -14,7 +10,11 @@ export function durationString(duration: number) {
   const minutes = secondsToMinutes(duration) - hoursToMinutes(hours);
   const seconds = duration - minutesToSeconds(minutes);
 
-  return `${formatDuration(hours)} : ${formatDuration(
-    minutes
-  )} : ${formatDuration(seconds.toFixed())}`;
+  return `${formatDuration(hours)} : ${formatDuration(minutes)} : ${formatDuration(
+    seconds.toFixed()
+  )}`;
+}
+
+export function totalDuration(clips: Clip[]) {
+  return clips.reduce((acc, clip) => acc + clip.duration, 0);
 }

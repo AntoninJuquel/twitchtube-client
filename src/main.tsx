@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter, Route, Routes } from 'react-router-dom';
 
-import { ThemeProvider, createTheme } from '@mui/material';
+import { ThemeProvider, createTheme, Tabs, Tab, Box } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
@@ -16,21 +15,52 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import 'reactflow/dist/style.css';
 
-import { Home, NotFound } from './pages';
+import { Twitch, Video } from '@/pages';
+import { VideoContextProvider } from '@/contexts/VideoContext';
+import Settings from '@/components/Settings';
 
 setChonkyDefaults({ iconComponent: ChonkyIconFA });
 const customTheme = createTheme({});
+
+type TabItemProps = {
+  page: string;
+  value: string;
+  Component: () => JSX.Element;
+};
+
+function TabItem({ page, value, Component }: TabItemProps) {
+  return (
+    <Box display={page === value ? 'block' : 'none'}>
+      <Component />
+    </Box>
+  );
+}
+
+function App() {
+  const [page, setPage] = useState('twitch');
+  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    setPage(newValue);
+  };
+  return (
+    <>
+      <Tabs value={page} onChange={handleChange} textColor="inherit">
+        <Tab label="Twitch" value="twitch" />
+        <Tab label="Video" value="video" />
+      </Tabs>
+      <TabItem page={page} value="twitch" Component={Twitch} />
+      <TabItem page={page} value="video" Component={Video} />
+      <Settings />
+    </>
+  );
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider theme={customTheme}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </HashRouter>
+        <VideoContextProvider>
+          <App />
+        </VideoContextProvider>
       </LocalizationProvider>
     </ThemeProvider>
   </React.StrictMode>

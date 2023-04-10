@@ -7,10 +7,7 @@ const inputProps = getInputProps();
 export default function MyVideo() {
   const { clips, fps, width, height } = inputProps;
 
-  const duration = (clips as TwitchClip[]).reduce<number>(
-    (acc, clip) => acc + clip.duration,
-    0
-  );
+  const duration = (clips as TwitchClip[]).reduce<number>((acc, clip) => acc + clip.duration, 0);
 
   return (
     <Composition
