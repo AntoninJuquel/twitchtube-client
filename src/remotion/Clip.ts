@@ -8,5 +8,4 @@ export type Clip = {
   videoUrl: string;
   views: number;
   duration: number;
-  selected: boolean;
 };

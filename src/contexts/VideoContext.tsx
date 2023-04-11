@@ -9,9 +9,7 @@ interface VideoContextState {
 
 interface VideoContextActions {
   addClip: (clip: Clip) => void;
-  removeClip: (clipId: string) => void;
-  setClipSelect: (clipId: string, selected: boolean) => void;
-  reorderClips: (newOrder: string[]) => void;
+  removeClip: (clip: Clip) => void;
 }
 
 interface VideoContextType extends VideoContextState, VideoContextActions {}
@@ -23,12 +21,6 @@ const VideoContext = createContext<VideoContextType>({
   },
   removeClip: () => {
     throw new Error('removeClip not implemented');
-  },
-  setClipSelect: () => {
-    throw new Error('setClipSelect not implemented');
-  },
-  reorderClips: () => {
-    throw new Error('reorderClips not implemented');
   },
 });
 
@@ -43,41 +35,13 @@ function VideoContextProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removeClip = useCallback(
-    (clipId: string) => {
-      actions.remove(clipId);
+    (clip: Clip) => {
+      actions.remove(clip.id);
     },
     [actions]
   );
 
-  const setClipSelect = useCallback(
-    (clipId: string, selected: boolean) => {
-      const clip = clips.get(clipId);
-      if (clip) {
-        clip.selected = selected;
-        actions.set(clipId, clip);
-      }
-    },
-    [clips, actions]
-  );
-
-  const reorderClips = useCallback(
-    (newOrder: string[]) => {
-      const newClips = new Map<string, Clip>();
-      newOrder.forEach((id) => {
-        const clip = clips.get(id);
-        if (clip) {
-          newClips.set(id, clip);
-        }
-      });
-      actions.setAll(newClips);
-    },
-    [clips, actions]
-  );
-
-  const value = useMemo(
-    () => ({ clips, addClip, removeClip, setClipSelect, reorderClips }),
-    [clips, addClip, removeClip, setClipSelect, reorderClips]
-  );
+  const value = useMemo(() => ({ clips, addClip, removeClip }), [clips, addClip, removeClip]);
 
   return <VideoContext.Provider value={value}>{children}</VideoContext.Provider>;
 }

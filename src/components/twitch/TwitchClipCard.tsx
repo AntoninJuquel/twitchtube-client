@@ -1,16 +1,21 @@
+/* eslint-disable react/jsx-props-no-spreading */
 import { useState } from 'react';
-import { Card, CardHeader, CardMedia, CardActions, Checkbox, Tabs, Tab, Icon } from '@mui/material';
+import {
+  Card,
+  CardHeader,
+  CardMedia,
+  CardActions,
+  Checkbox,
+  Tabs,
+  Tab,
+  Icon,
+  CardProps,
+} from '@mui/material';
 import { Clip } from '@/remotion/Clip';
-import { useVideo } from '@/contexts/VideoContext';
 import { TwitchClipDisplayMode } from '@/types/twitch';
 
 type TwitchClipProps = {
   clip: Clip;
-};
-
-type TwitchClipCardProps = TwitchClipProps & {
-  checkbox?: boolean;
-  tab?: boolean | TwitchClipDisplayMode;
 };
 
 export function TwitchClipCardVideo({ clip }: TwitchClipProps) {
@@ -61,13 +66,21 @@ const TwitchClipDisplay: Record<TwitchClipDisplayMode, (props: TwitchClipProps) 
 };
 
 export function TwitchClipCardTab({ clip }: TwitchClipProps) {
-  const [tab, setTab] = useState<TwitchClipDisplayMode>(TwitchClipDisplayMode.Video);
+  const [tab, setTab] = useState<TwitchClipDisplayMode>(TwitchClipDisplayMode.Image);
   const handleChange = (event: React.SyntheticEvent, newValue: TwitchClipDisplayMode) => {
     setTab(newValue);
   };
   return (
     <>
-      <Tabs value={tab} onChange={handleChange}>
+      <Tabs
+        value={tab}
+        onChange={handleChange}
+        sx={{
+          '& .MuiTabs-indicator': {
+            display: 'none',
+          },
+        }}
+      >
         <Tab value={TwitchClipDisplayMode.Video} icon={<Icon>play_circle</Icon>} />
         <Tab value={TwitchClipDisplayMode.Image} icon={<Icon>image</Icon>} />
         <Tab value={TwitchClipDisplayMode.Text} icon={<Icon>text_fields</Icon>} />
@@ -77,31 +90,58 @@ export function TwitchClipCardTab({ clip }: TwitchClipProps) {
   );
 }
 
-export function TwitchClipCardCheckBox({ clip }: TwitchClipProps) {
-  const { setClipSelect } = useVideo();
+type TwitchClipCardCheckBoxProps = TwitchClipProps & {
+  selected: boolean;
+  setClipSelect: (clip: Clip, selected: boolean) => void;
+};
+
+export function TwitchClipCardCheckBox({
+  clip,
+  selected,
+  setClipSelect,
+}: TwitchClipCardCheckBoxProps) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setClipSelect(clip.id, event.target.checked);
+    setClipSelect(clip, event.target.checked);
   };
   return (
     <CardActions>
-      <Checkbox checked={clip.selected} onChange={handleChange} />
+      <Checkbox checked={selected} onChange={handleChange} />
     </CardActions>
   );
 }
 
-export default function TwitchClipCard({ clip, tab, checkbox }: TwitchClipCardProps) {
+type TwitchClipCardProps = TwitchClipProps & {
+  checkbox?: boolean;
+  TwitchClipCardCheckBoxProps?: Omit<TwitchClipCardCheckBoxProps, 'clip'>;
+  tab?: boolean | TwitchClipDisplayMode;
+  children?: React.ReactNode;
+  cardProps?: CardProps;
+};
+
+export default function TwitchClipCard({
+  clip,
+  tab,
+  checkbox,
+  TwitchClipCardCheckBoxProps,
+  children,
+  cardProps,
+}: TwitchClipCardProps) {
   return (
     <Card
       sx={{
         width: 448,
       }}
+      {...cardProps}
     >
       {typeof tab === 'boolean' && tab ? (
         <TwitchClipCardTab clip={clip} />
       ) : (
         TwitchClipDisplay[tab || TwitchClipDisplayMode.Video]({ clip })
       )}
-      {checkbox && <TwitchClipCardCheckBox clip={clip} />}
+      {checkbox && TwitchClipCardCheckBoxProps && (
+        <TwitchClipCardCheckBox {...TwitchClipCardCheckBoxProps} clip={clip} />
+      )}
+      {children}
     </Card>
   );
 }
@@ -109,4 +149,7 @@ export default function TwitchClipCard({ clip, tab, checkbox }: TwitchClipCardPr
 TwitchClipCard.defaultProps = {
   checkbox: false,
   tab: false,
+  TwitchClipCardCheckBoxProps: undefined,
+  children: undefined,
+  cardProps: {},
 };

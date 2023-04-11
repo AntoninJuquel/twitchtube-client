@@ -29,23 +29,32 @@ type Props = {
 
 export default function TwitchSection({ removeSection }: Props) {
   const [expanded, toggleExpanded, setExpanded] = useToggle(false);
-  const { clips, addClip, setClipSelect } = useVideo();
-  const [clipIds, setClipIds] = useState<string[]>([]);
-  const sectionClips = clipIds.map((id) => clips.get(id)) as Clip[];
-  const sectionClipsSelected = sectionClips.filter((clip) => clip?.selected);
+
+  const { clips, addClip, removeClip } = useVideo();
+  const [sectionClips, setSectionClips] = useState<Clip[]>([]);
+
+  const sectionClipsSelected = sectionClips.filter((clip) => clips.get(clip.id));
   const allSelected = sectionClipsSelected.length === sectionClips.length;
   const someSelected = sectionClipsSelected.length > 0 && !allSelected;
 
   const handleResult = (res: GenericTwitchResponse<TwitchClip>) => {
-    res.data.forEach((clip) => addClip(formatTwitchClip(clip)));
-    setClipIds(res.data.map((clip) => clip.id));
+    setSectionClips(res.data.map((clip) => formatTwitchClip(clip)));
     setExpanded(true);
   };
 
   const toggleAllSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    sectionClips.forEach((clip) => {
-      setClipSelect(clip.id, event.target.checked);
-    });
+    const selected = event.target.checked;
+    const action = selected ? addClip : removeClip;
+    sectionClips.forEach((clip) => action(clip));
+  };
+
+  const clipChecked = (clip: Clip) => {
+    return Boolean(clips.get(clip.id));
+  };
+
+  const setClipSelect = (clip: Clip, selected: boolean) => {
+    const action = selected ? addClip : removeClip;
+    action(clip);
   };
 
   return (
@@ -80,10 +89,17 @@ export default function TwitchSection({ removeSection }: Props) {
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
-        <Grid container spacing={0.5} justifyContent="center">
+        <Grid container spacing={0.5}>
           {sectionClips.map((clip) => (
             <Grid key={clip.id} item>
-              <TwitchClipCard clip={clip} checkbox />
+              <TwitchClipCard
+                clip={clip}
+                checkbox
+                TwitchClipCardCheckBoxProps={{
+                  selected: clipChecked(clip),
+                  setClipSelect,
+                }}
+              />
             </Grid>
           ))}
         </Grid>

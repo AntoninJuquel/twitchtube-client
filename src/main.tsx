@@ -42,12 +42,23 @@ function App() {
     setPage(newValue);
   };
   return (
-    <Stack direction="column" width="100vw" height="100vh">
+    <Stack direction="column" width="100%" height="100vh">
       <Settings />
-      <Tabs value={page} onChange={handleChange} textColor="inherit">
+      <Tabs
+        value={page}
+        onChange={handleChange}
+        textColor="inherit"
+        sx={{
+          position: 'fixed',
+          width: '100%',
+          zIndex: 100,
+          backgroundColor: 'primary.contrastText',
+        }}
+      >
         <Tab label="Twitch" value="twitch" />
         <Tab label="Video" value="video" />
       </Tabs>
+      <Tabs />
       <TabItem page={page} value="twitch" Component={Twitch} />
       <TabItem page={page} value="video" Component={Video} />
     </Stack>
