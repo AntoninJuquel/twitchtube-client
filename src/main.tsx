@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { ThemeProvider, createTheme, Tabs, Tab, Box } from '@mui/material';
+import { ThemeProvider, createTheme, Tabs, Tab, Box, Stack } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
@@ -30,7 +30,7 @@ type TabItemProps = {
 
 function TabItem({ page, value, Component }: TabItemProps) {
   return (
-    <Box display={page === value ? 'block' : 'none'}>
+    <Box display={page === value ? 'block' : 'none'} flex={1}>
       <Component />
     </Box>
   );
@@ -42,15 +42,15 @@ function App() {
     setPage(newValue);
   };
   return (
-    <>
+    <Stack direction="column" width="100vw" height="100vh">
+      <Settings />
       <Tabs value={page} onChange={handleChange} textColor="inherit">
         <Tab label="Twitch" value="twitch" />
         <Tab label="Video" value="video" />
       </Tabs>
       <TabItem page={page} value="twitch" Component={Twitch} />
       <TabItem page={page} value="video" Component={Video} />
-      <Settings />
-    </>
+    </Stack>
   );
 }
 
