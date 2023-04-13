@@ -25,7 +25,7 @@ export async function postTwitchConfig(config: any) {
 
 export async function getTwitchClips(params: any) {
   const response = await api.get<GenericTwitchResponse<TwitchClip>>('/twitch/clips', { params });
-  return response.data;
+  return response;
 }
 
 export async function getVideoConfig() {

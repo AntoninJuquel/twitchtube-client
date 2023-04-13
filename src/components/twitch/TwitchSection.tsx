@@ -12,6 +12,8 @@ import {
   Checkbox,
   Slide,
   Fade,
+  Alert,
+  Collapse,
 } from '@mui/material';
 
 import { useVideo } from '@/contexts/VideoContext';
@@ -27,19 +29,50 @@ type Props = {
   removeSection: () => void;
 };
 
+type TwitchAlert = {
+  severity: 'error' | 'success' | 'info' | 'warning';
+  message: string;
+  open: boolean;
+};
+
 export default function TwitchSection({ removeSection }: Props) {
   const [expanded, toggleExpanded, setExpanded] = useToggle(false);
 
   const { clips, addClip, removeClip } = useVideo();
   const [sectionClips, setSectionClips] = useState<Clip[]>([]);
+  const [alert, setAlert] = useState<TwitchAlert>({
+    severity: 'error',
+    message: '',
+    open: false,
+  });
 
   const sectionClipsSelected = sectionClips.filter((clip) => clips.get(clip.id));
   const allSelected = sectionClipsSelected.length === sectionClips.length;
   const someSelected = sectionClipsSelected.length > 0 && !allSelected;
 
+  const handlePreSubmit = () => {
+    sectionClips.forEach((clip) => removeClip(clip));
+    setSectionClips([]);
+    setAlert({ ...alert, open: false });
+  };
+
   const handleResult = (res: GenericTwitchResponse<TwitchClip>) => {
     setSectionClips(res.data.map((clip) => formatTwitchClip(clip)));
+    setAlert({
+      open: true,
+      severity: 'success',
+      message: `Found ${res.data.length} clips`,
+    });
     setExpanded(true);
+  };
+
+  const handleError = (newError: Error) => {
+    setAlert({ open: true, severity: 'error', message: newError.message });
+  };
+
+  const handleCloseAlert = (e: React.SyntheticEvent<Element, Event>) => {
+    e.stopPropagation();
+    setAlert({ ...alert, open: false });
   };
 
   const toggleAllSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,15 +90,36 @@ export default function TwitchSection({ removeSection }: Props) {
     action(clip);
   };
 
+  const handleDeleteSection = () => {
+    sectionClips.forEach((clip) => removeClip(clip));
+    removeSection();
+  };
+
   return (
-    <Accordion expanded={expanded} onChange={toggleExpanded}>
+    <Accordion
+      expanded={expanded}
+      onChange={toggleExpanded}
+      elevation={3}
+      sx={{
+        marginBottom: 2,
+      }}
+    >
       <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
         <Stack>
           <Stack direction="row" spacing={2} alignItems="center" width="100%">
-            <IconButton onClick={removeSection}>
+            <IconButton onClick={handleDeleteSection}>
               <Icon>delete</Icon>
             </IconButton>
-            <TwitchForm handleResult={handleResult} />
+            <TwitchForm
+              handleResult={handleResult}
+              handleError={handleError}
+              onSubmit={handlePreSubmit}
+            />
+            <Collapse in={alert.open}>
+              <Alert severity={alert.severity} onClose={handleCloseAlert}>
+                {alert.message}
+              </Alert>
+            </Collapse>
           </Stack>
           <Slide in={sectionClips.length > 0} direction="right" unmountOnExit>
             <Stack direction="row" spacing={2} alignItems="center" width="100%">

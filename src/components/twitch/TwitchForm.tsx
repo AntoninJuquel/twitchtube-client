@@ -105,10 +105,12 @@ function CustomPeriodButton({ start, end, onSubmit }: CustomPeriodButtonProps) {
 }
 
 type Props = {
+  onSubmit: () => void;
   handleResult: (values: GenericTwitchResponse<TwitchClip>) => void;
+  handleError: (error: Error) => void;
 };
 
-export default function TwitchForm({ handleResult }: Props) {
+export default function TwitchForm({ onSubmit, handleResult, handleError }: Props) {
   const formik = useFormik({
     isInitialValid: false,
     validationSchema,
@@ -120,8 +122,13 @@ export default function TwitchForm({ handleResult }: Props) {
       end: new Date(),
     },
     onSubmit: async (values) => {
-      const res = await api.getTwitchClips(values);
-      handleResult(res);
+      onSubmit();
+      await api
+        .getTwitchClips(values)
+        .then((res) => {
+          handleResult(res.data);
+        })
+        .catch((error) => handleError(new Error(error.response?.data?.message || 'Unknown error')));
     },
   });
 
@@ -154,6 +161,7 @@ export default function TwitchForm({ handleResult }: Props) {
           value={values.type}
           onChange={handleChangeToggleButton}
           exclusive
+          size="small"
         >
           <ToggleButton value={TwitchClipType.game}>
             <Icon>sports_esports</Icon>

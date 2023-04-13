@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { ThemeProvider, createTheme, Tabs, Tab, Box, Stack } from '@mui/material';
+import { ThemeProvider, createTheme, Tabs, Tab, Box, Stack, Divider } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
@@ -59,6 +59,7 @@ function App() {
         <Tab label="Video" value="video" />
       </Tabs>
       <Tabs />
+      <Divider />
       <TabItem page={page} value="twitch" Component={Twitch} />
       <TabItem page={page} value="video" Component={Video} />
     </Stack>
