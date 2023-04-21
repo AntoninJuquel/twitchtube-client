@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { Clip } from './remotion/Clip';
+
 declare module 'gl-transitions' {
   interface GLTransition {
     name: string;
@@ -13,4 +15,22 @@ declare module 'gl-transitions' {
   }
   const GLTransitions: GLTransition[];
   export default GLTransitions;
+}
+
+interface CustomEventMap {
+  'video:clip:added': CustomEvent<Clip>;
+  'video:clip:removed': CustomEvent<Clip>;
+}
+declare global {
+  interface Document {
+    addEventListener<K extends keyof CustomEventMap>(
+      type: K,
+      listener: (this: Document, ev: CustomEventMap[K]) => void
+    ): void;
+    removeEventListener<K extends keyof CustomEventMap>(
+      type: K,
+      listener: (this: Document, ev: CustomEventMap[K]) => void
+    ): void;
+    dispatchEvent<K extends keyof CustomEventMap>(ev: CustomEventMap[K]): void;
+  }
 }

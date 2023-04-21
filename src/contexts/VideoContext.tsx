@@ -30,6 +30,7 @@ function VideoContextProvider({ children }: { children: React.ReactNode }) {
   const addClip = useCallback(
     (clip: Clip) => {
       actions.set(clip.id, clip);
+      document.dispatchEvent(new CustomEvent('video:clip:added', { detail: clip }));
     },
     [actions]
   );
@@ -37,6 +38,7 @@ function VideoContextProvider({ children }: { children: React.ReactNode }) {
   const removeClip = useCallback(
     (clip: Clip) => {
       actions.remove(clip.id);
+      document.dispatchEvent(new CustomEvent('video:clip:removed', { detail: clip }));
     },
     [actions]
   );

@@ -4,7 +4,6 @@ import { TwitchClip } from 'twitch-api-helix';
 export function formatTwitchClip(clip: TwitchClip): Clip {
   const slicePoint = clip.thumbnail_url.indexOf('-preview-');
   const videoUrl = `${clip.thumbnail_url.slice(0, slicePoint)}.mp4`;
-
   return {
     id: clip.id,
     title: clip.title,
@@ -15,6 +14,5 @@ export function formatTwitchClip(clip: TwitchClip): Clip {
     videoUrl,
     views: clip.view_count,
     duration: clip.duration,
-    selected: false,
   };
 }

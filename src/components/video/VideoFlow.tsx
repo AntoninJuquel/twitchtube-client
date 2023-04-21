@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useToggle } from 'usehooks-ts';
 import { Icon, colors } from '@mui/material';
 import ReactFlow, {
+  ReactFlowInstance,
   ReactFlowProvider,
   useReactFlow,
   Background,
@@ -14,62 +14,20 @@ import ReactFlow, {
   Panel,
 } from 'reactflow';
 
-import { buildLinearGraph } from '@/utils/video';
+import {
+  buildLinearGraph,
+  connectNodes,
+  disconnectNodes,
+  randomizeNodes,
+  handlePosition,
+  computePosition,
+} from '@/utils/video';
 import { Clip } from '@/remotion/Clip';
 import { useVideo } from '@/contexts/VideoContext';
 import VideoClipNode from './VideoClipNode';
 import VideoPlayer from './VideoPlayer';
 
 const nodeTypes = { clip: VideoClipNode };
-
-function FlowControls({ setLinearGraph }: { setLinearGraph: (clips: Clip[]) => void }) {
-  const reactFlowInstance = useReactFlow<Clip>();
-  const [stack, toggleStack] = useToggle(false);
-
-  const stackNodes = useCallback(() => {
-    const [longestPath, rest] = buildLinearGraph(reactFlowInstance);
-    const nodes = [...longestPath, ...rest].map((node, index) => ({
-      ...node,
-      position: stack ? { x: 0, y: index * 400 } : { x: index * 300, y: (index % 2) * 400 },
-    }));
-    reactFlowInstance.setNodes(nodes);
-    toggleStack();
-  }, [reactFlowInstance, stack, toggleStack]);
-
-  const autoConnect = useCallback(() => {
-    const [longestPath, rest] = buildLinearGraph(reactFlowInstance);
-    const nodes = [...longestPath, ...rest].map((node, index) => ({
-      ...node,
-      position: { x: index * 300, y: (index % 2) * 400 },
-    }));
-    const edges = nodes.map((node, index) => {
-      const nextNode = nodes[index + 1];
-      return {
-        id: `${node.id}-${nextNode?.id}`,
-        source: node.id,
-        target: nextNode?.id,
-      };
-    });
-    reactFlowInstance.setEdges(edges);
-    reactFlowInstance.setNodes(nodes);
-  }, [reactFlowInstance]);
-
-  const shuffle = useCallback(() => {}, []);
-
-  return (
-    <Controls showInteractive={false} showZoom={false}>
-      <ControlButton title={`stack ${stack ? 'vertically' : 'horizontally'}`} onClick={stackNodes}>
-        <Icon fontSize="small">{stack ? 'view_stream' : 'view_week'}</Icon>
-      </ControlButton>
-      <ControlButton title="auto connect" onClick={autoConnect}>
-        <Icon fontSize="small">route</Icon>
-      </ControlButton>
-      <ControlButton title="shuffle" onClick={autoConnect}>
-        <Icon fontSize="small">shuffle</Icon>
-      </ControlButton>
-    </Controls>
-  );
-}
 
 const defaultEdge = {
   type: 'smoothstep',
@@ -80,10 +38,15 @@ const defaultEdge = {
   },
 };
 
+type ActionFunction = (instance: ReactFlowInstance) => void;
+
 function Flow() {
   const reactFlowInstance = useReactFlow<Clip>();
-  const { clips, removeClip } = useVideo();
+  const { removeClip } = useVideo();
+
   const [linearGraph, setLinearGraph] = useState<Clip[]>([]);
+
+  const [horizontal, setHorizontal] = useState(true);
 
   const updateLinearGraph = useCallback(() => {
     if (reactFlowInstance) {
@@ -101,32 +64,66 @@ function Flow() {
     [removeClip]
   );
 
-  useEffect(() => {
-    if (reactFlowInstance && clips) {
-      const currentNodes = reactFlowInstance.getNodes();
-      const currentEdges = reactFlowInstance.getEdges();
-      const nodes: Node[] = Array.from(clips.values()).map((clip, index) => ({
+  const onClipAdded = useCallback(
+    (event: CustomEvent<Clip>) => {
+      if (!reactFlowInstance) return;
+      const clip = event.detail;
+      reactFlowInstance.addNodes({
         id: clip.id,
         type: 'clip',
         data: clip,
-        position: {
-          x: currentNodes[index]?.position?.x || index * 300,
-          y: currentNodes[index]?.position?.y || (index % 2) * 400,
-        },
-      }));
-
-      const edges = currentEdges.filter((edge) => {
-        const source = nodes.find((node) => node.id === edge.source);
-        const target = nodes.find((node) => node.id === edge.target);
-        return source && target;
+        position: computePosition(reactFlowInstance.getNodes().length, horizontal),
       });
-
-      reactFlowInstance.setNodes(nodes);
-      reactFlowInstance.setEdges(edges);
-
       updateLinearGraph();
-    }
-  }, [reactFlowInstance, clips, updateLinearGraph]);
+    },
+    [reactFlowInstance, horizontal, updateLinearGraph]
+  );
+
+  const onClipRemoved = useCallback(
+    (event: CustomEvent<Clip>) => {
+      if (!reactFlowInstance) return;
+      const removedClip = event.detail;
+      const nodes = reactFlowInstance.getNodes();
+      const removedNode = nodes.find((node) => node.id === removedClip.id);
+      if (removedNode) {
+        reactFlowInstance.deleteElements({
+          nodes: [removedNode],
+        });
+      }
+      updateLinearGraph();
+    },
+    [reactFlowInstance, updateLinearGraph]
+  );
+
+  useEffect(() => {
+    document.addEventListener('video:clip:added', onClipAdded);
+    document.addEventListener('video:clip:removed', onClipRemoved);
+
+    return () => {
+      document.removeEventListener('video:clip:added', onClipAdded);
+      document.removeEventListener('video:clip:removed', onClipRemoved);
+    };
+  }, [onClipAdded, onClipRemoved]);
+
+  const handleControlClick = useCallback(
+    (action: ActionFunction) => {
+      if (!reactFlowInstance) return;
+
+      action(reactFlowInstance);
+      const nodes = reactFlowInstance.getNodes();
+      reactFlowInstance.setNodes(nodes.map(handlePosition(horizontal)));
+      updateLinearGraph();
+    },
+    [reactFlowInstance, horizontal, updateLinearGraph]
+  );
+
+  const toggleDirection = useCallback(() => {
+    setHorizontal((prev) => {
+      const nodes = reactFlowInstance.getNodes();
+      reactFlowInstance.setNodes(nodes.map(handlePosition(!prev)));
+      return !prev;
+    });
+  }, [reactFlowInstance]);
 
   return (
     <ReactFlow
@@ -145,7 +142,23 @@ function Flow() {
     >
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       <MiniMap />
-      <FlowControls setLinearGraph={setLinearGraph} />
+      <Controls showInteractive={false} showZoom={false}>
+        <ControlButton
+          title={`stack ${horizontal ? 'vertically' : 'horizontally'}`}
+          onClick={toggleDirection}
+        >
+          <Icon fontSize="small">{horizontal ? 'view_stream' : 'view_week'}</Icon>
+        </ControlButton>
+        <ControlButton title="auto connect" onClick={() => handleControlClick(connectNodes)}>
+          <Icon fontSize="small">route</Icon>
+        </ControlButton>
+        <ControlButton title="shuffle" onClick={() => handleControlClick(randomizeNodes)}>
+          <Icon fontSize="small">shuffle</Icon>
+        </ControlButton>
+        <ControlButton title="disconnect" onClick={() => handleControlClick(disconnectNodes)}>
+          <Icon fontSize="small">restart_alt</Icon>
+        </ControlButton>
+      </Controls>
       <Panel position="bottom-center">
         <VideoPlayer clips={linearGraph} />
       </Panel>

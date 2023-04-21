@@ -1,12 +1,12 @@
 import { describe, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { Home } from '../pages';
+import { Twitch } from '../pages';
 
 describe('App', () => {
   it('Renders hello world', () => {
     // arrange
-    render(<Home />);
+    render(<Twitch />);
     // act
     // expect
     expect(
