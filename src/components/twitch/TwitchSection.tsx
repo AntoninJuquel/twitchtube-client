@@ -51,7 +51,7 @@ export default function TwitchSection({ removeSection }: Props) {
   const someSelected = sectionClipsSelected.length > 0 && !allSelected;
 
   const handlePreSubmit = () => {
-    sectionClips.forEach((clip) => removeClip(clip));
+    removeClip(sectionClips);
     setSectionClips([]);
     setAlert({ ...alert, open: false });
   };
@@ -78,7 +78,7 @@ export default function TwitchSection({ removeSection }: Props) {
   const toggleAllSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.checked;
     const action = selected ? addClip : removeClip;
-    sectionClips.forEach((clip) => action(clip));
+    action(sectionClips);
   };
 
   const clipChecked = (clip: Clip) => {
@@ -87,11 +87,11 @@ export default function TwitchSection({ removeSection }: Props) {
 
   const setClipSelect = (clip: Clip, selected: boolean) => {
     const action = selected ? addClip : removeClip;
-    action(clip);
+    action([clip]);
   };
 
   const handleDeleteSection = () => {
-    sectionClips.forEach((clip) => removeClip(clip));
+    sectionClips.forEach((clip) => removeClip([clip]));
     removeSection();
   };
 

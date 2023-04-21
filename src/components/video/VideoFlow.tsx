@@ -57,39 +57,36 @@ function Flow() {
 
   const handleNodeDelete = useCallback(
     (nodes: Node<Clip>[]) => {
-      nodes.forEach((node) => {
-        removeClip(node.data);
-      });
+      removeClip(nodes.map((node) => node.data));
     },
     [removeClip]
   );
 
   const onClipAdded = useCallback(
-    (event: CustomEvent<Clip>) => {
+    (event: CustomEvent<Clip[]>) => {
       if (!reactFlowInstance) return;
-      const clip = event.detail;
-      reactFlowInstance.addNodes({
-        id: clip.id,
-        type: 'clip',
-        data: clip,
-        position: computePosition(reactFlowInstance.getNodes().length, horizontal),
-      });
+      const addedClips = event.detail;
+      const nodes = reactFlowInstance.getNodes();
+      reactFlowInstance.addNodes(
+        addedClips.map((clip, index) => ({
+          id: clip.id,
+          type: 'clip',
+          data: clip,
+          position: computePosition(nodes.length + index, horizontal),
+        }))
+      );
       updateLinearGraph();
     },
     [reactFlowInstance, horizontal, updateLinearGraph]
   );
 
   const onClipRemoved = useCallback(
-    (event: CustomEvent<Clip>) => {
+    (event: CustomEvent<Clip[]>) => {
       if (!reactFlowInstance) return;
-      const removedClip = event.detail;
-      const nodes = reactFlowInstance.getNodes();
-      const removedNode = nodes.find((node) => node.id === removedClip.id);
-      if (removedNode) {
-        reactFlowInstance.deleteElements({
-          nodes: [removedNode],
-        });
-      }
+      const removedClips = event.detail;
+      reactFlowInstance.deleteElements({
+        nodes: removedClips.map((clip) => ({ id: clip.id })),
+      });
       updateLinearGraph();
     },
     [reactFlowInstance, updateLinearGraph]

@@ -8,8 +8,8 @@ interface VideoContextState {
 }
 
 interface VideoContextActions {
-  addClip: (clip: Clip) => void;
-  removeClip: (clip: Clip) => void;
+  addClip: (clip: Clip[]) => void;
+  removeClip: (clip: Clip[]) => void;
 }
 
 interface VideoContextType extends VideoContextState, VideoContextActions {}
@@ -28,17 +28,21 @@ function VideoContextProvider({ children }: { children: React.ReactNode }) {
   const [clips, actions] = useMap<string, Clip>(new Map());
 
   const addClip = useCallback(
-    (clip: Clip) => {
-      actions.set(clip.id, clip);
-      document.dispatchEvent(new CustomEvent('video:clip:added', { detail: clip }));
+    (addedClips: Clip[]) => {
+      addedClips.forEach((clip) => {
+        actions.set(clip.id, clip);
+      });
+      document.dispatchEvent(new CustomEvent('video:clip:added', { detail: addedClips }));
     },
     [actions]
   );
 
   const removeClip = useCallback(
-    (clip: Clip) => {
-      actions.remove(clip.id);
-      document.dispatchEvent(new CustomEvent('video:clip:removed', { detail: clip }));
+    (removedClips: Clip[]) => {
+      removedClips.forEach((clip) => {
+        actions.remove(clip.id);
+      });
+      document.dispatchEvent(new CustomEvent('video:clip:removed', { detail: removedClips }));
     },
     [actions]
   );

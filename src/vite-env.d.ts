@@ -18,8 +18,8 @@ declare module 'gl-transitions' {
 }
 
 interface CustomEventMap {
-  'video:clip:added': CustomEvent<Clip>;
-  'video:clip:removed': CustomEvent<Clip>;
+  'video:clip:added': CustomEvent<Clip[]>;
+  'video:clip:removed': CustomEvent<Clip[]>;
 }
 declare global {
   interface Document {
