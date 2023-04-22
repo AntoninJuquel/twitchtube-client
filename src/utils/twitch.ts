@@ -16,3 +16,12 @@ export function formatTwitchClip(clip: TwitchClip): Clip {
     duration: clip.duration,
   };
 }
+
+export function downloadTwitchClip(clip: Clip) {
+  const a = document.createElement('a');
+  a.href = clip.videoUrl;
+  a.download = clip.title;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}

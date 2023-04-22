@@ -10,9 +10,11 @@ import {
   Tab,
   Icon,
   CardProps,
+  IconButton,
 } from '@mui/material';
 import { Clip } from '@/remotion/Clip';
 import { TwitchClipDisplayMode } from '@/types/twitch';
+import { downloadTwitchClip } from '@/utils/twitch';
 
 type TwitchClipProps = {
   clip: Clip;
@@ -103,15 +105,13 @@ export function TwitchClipCardCheckBox({
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setClipSelect(clip, event.target.checked);
   };
-  return (
-    <CardActions>
-      <Checkbox checked={selected} onChange={handleChange} />
-    </CardActions>
-  );
+  return <Checkbox checked={selected} onChange={handleChange} />;
 }
 
+type TwitchClipCardActionsMap = 'download' | 'select';
+
 type TwitchClipCardProps = TwitchClipProps & {
-  checkbox?: boolean;
+  actions?: TwitchClipCardActionsMap[];
   TwitchClipCardCheckBoxProps?: Omit<TwitchClipCardCheckBoxProps, 'clip'>;
   tab?: boolean | TwitchClipDisplayMode;
   children?: React.ReactNode;
@@ -119,9 +119,9 @@ type TwitchClipCardProps = TwitchClipProps & {
 };
 
 export default function TwitchClipCard({
+  actions,
   clip,
   tab,
-  checkbox,
   TwitchClipCardCheckBoxProps,
   children,
   cardProps,
@@ -138,8 +138,22 @@ export default function TwitchClipCard({
       ) : (
         TwitchClipDisplay[tab || TwitchClipDisplayMode.Video]({ clip })
       )}
-      {checkbox && TwitchClipCardCheckBoxProps && (
-        <TwitchClipCardCheckBox {...TwitchClipCardCheckBoxProps} clip={clip} />
+
+      {actions && actions?.length > 0 && (
+        <CardActions
+          sx={{
+            justifyContent: 'space-between',
+          }}
+        >
+          {actions.includes('select') && TwitchClipCardCheckBoxProps && (
+            <TwitchClipCardCheckBox {...TwitchClipCardCheckBoxProps} clip={clip} />
+          )}
+          {actions.includes('download') && (
+            <IconButton onClick={() => downloadTwitchClip(clip)}>
+              <Icon>download</Icon>
+            </IconButton>
+          )}
+        </CardActions>
       )}
       {children}
     </Card>
@@ -147,7 +161,7 @@ export default function TwitchClipCard({
 }
 
 TwitchClipCard.defaultProps = {
-  checkbox: false,
+  actions: [],
   tab: false,
   TwitchClipCardCheckBoxProps: undefined,
   children: undefined,

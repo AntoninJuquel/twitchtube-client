@@ -148,7 +148,7 @@ export default function TwitchSection({ removeSection }: Props) {
             <Grid key={clip.id} item>
               <TwitchClipCard
                 clip={clip}
-                checkbox
+                actions={['select', 'download']}
                 TwitchClipCardCheckBoxProps={{
                   selected: clipChecked(clip),
                   setClipSelect,
