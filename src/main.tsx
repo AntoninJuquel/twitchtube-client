@@ -15,7 +15,7 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import 'reactflow/dist/style.css';
 
-import { Twitch, Video } from '@/pages';
+import { Monitoring, Twitch, Video } from '@/pages';
 import { VideoContextProvider } from '@/contexts/VideoContext';
 import Settings from '@/components/Settings';
 
@@ -26,15 +26,22 @@ type TabItemProps = {
   page: string;
   value: string;
   Component: () => JSX.Element;
+  unmountOnExit?: boolean;
 };
 
-function TabItem({ page, value, Component }: TabItemProps) {
+function TabItem({ page, value, Component, unmountOnExit }: TabItemProps) {
+  if (unmountOnExit && page !== value) return null;
+
   return (
     <Box display={page === value ? 'block' : 'none'} flex={1}>
       <Component />
     </Box>
   );
 }
+
+TabItem.defaultProps = {
+  unmountOnExit: false,
+};
 
 function App() {
   const [page, setPage] = useState('twitch');
@@ -57,11 +64,13 @@ function App() {
       >
         <Tab label="Twitch" value="twitch" />
         <Tab label="Video" value="video" />
+        <Tab label="Monitoring" value="monitoring" />
       </Tabs>
       <Tabs />
       <Divider />
       <TabItem page={page} value="twitch" Component={Twitch} />
       <TabItem page={page} value="video" Component={Video} />
+      <TabItem page={page} value="monitoring" Component={Monitoring} />
     </Stack>
   );
 }

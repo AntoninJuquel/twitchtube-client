@@ -20,6 +20,8 @@ import {
   Icon,
   Stack,
   SelectChangeEvent,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { TwitchClipType } from '@/types/twitch';
@@ -151,9 +153,13 @@ export default function TwitchForm({ onSubmit, handleResult, handleError }: Prop
     setFieldValue('end', end);
     setPeriod('custom');
   };
+
+  const theme = useTheme();
+  const matches = useMediaQuery(theme.breakpoints.up('sm'));
+
   return (
     <form onSubmit={handleSubmit}>
-      <Stack direction="row" spacing={2} alignItems="center" width="100%">
+      <Stack direction={matches ? 'row' : 'column'} spacing={2} alignItems="center">
         <ToggleButtonGroup
           id="type"
           aria-label="type"

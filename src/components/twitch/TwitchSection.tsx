@@ -106,7 +106,7 @@ export default function TwitchSection({ removeSection }: Props) {
     >
       <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
         <Stack>
-          <Stack direction="row" spacing={2} alignItems="center" width="100%">
+          <Stack direction="row" spacing={2} alignItems="center">
             <IconButton onClick={handleDeleteSection}>
               <Icon>delete</Icon>
             </IconButton>
@@ -122,7 +122,7 @@ export default function TwitchSection({ removeSection }: Props) {
             </Collapse>
           </Stack>
           <Slide in={sectionClips.length > 0} direction="right" unmountOnExit>
-            <Stack direction="row" spacing={2} alignItems="center" width="100%">
+            <Stack direction="row" spacing={2} alignItems="center">
               <Checkbox
                 onChange={toggleAllSelected}
                 onClick={(e) => e.stopPropagation()}
